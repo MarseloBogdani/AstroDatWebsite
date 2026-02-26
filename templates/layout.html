@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroDat Observer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: #e2e8f0;
+            background: linear-gradient(-45deg, #0f172a, #020617);
+            background-size: 400% 400%;
+            animation: gradientBG 90s ease infinite;
+            background-attachment: fixed;
+        }
+    
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+            z-index: -1;
+            animation: starsMove 100s linear infinite;
+        }
+    
+        @keyframes starsMove {
+            from { transform: translateY(0); }
+            to { transform: translateY(-200px); }
+        }
+    
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .glass:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0) 70%, rgba(1, 0, 11, 0.3) 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        @media (min-width: 1024px) {
+            .vignette {
+                background: radial-gradient(circle, rgba(255, 255, 255, 0) 60%, rgba(1, 0, 11, 0.7) 100%);
+            }
+}
+
+        .comet {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 200px;
+            height: 4px;
+            background: radial-gradient(ellipse at right, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0) 80%);
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: shootingStar 105s linear infinite;
+        }
+
+        .comet::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 3px;
+            background: rgba(88, 87, 87, 0.33);
+            border-radius: 50%;
+            box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0), 0 0 30px 5px rgba(240, 6, 6, 0);
+        }
+
+        @keyframes shootingStar {
+            0% { transform: translate(-200px, -200px) rotate(45deg); opacity: 0; }
+            2% { opacity: 1; }
+            8% { transform: translate(120vw, 120vh) rotate(45deg); opacity: 0; }
+            100% { transform: translate(120vw, 120vh) rotate(45deg); opacity: 0; }
+        }
+
+       
+        .expandable-content {
+            display: none; 
+            opacity: 0;
+            transform: translateY(-8px); /* Μικρότερη μετατόπιση για πιο snappy αίσθηση */
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        /* 2. Η κλάση που ενεργοποιείται με το κλικ */
+        .expandable-content.is-open {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 3. Απενεργοποίηση του Blur μόνο στο ανοιγμένο μέρος */
+        .no-blur-mobile {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            /* Χρησιμοποίησε ένα χρώμα που ταιριάζει με το "glass" σου */
+            background: rgba(1, 0, 11, 0.038);
+        }
+
+        /* 4. Γενική βελτιστοποίηση για κινητά */
+        @media (max-width: 768px) {
+            .glass {
+                backdrop-filter: blur(4px); /* Χαμηλό blur για να μην κολλάει το scrolling */
+                -webkit-backdrop-filter: blur(4px);
+                background: rgba(255, 255, 255, 0.022); 
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-12 relative">
+    <div class="animated-bg"></div>
+    <div class="vignette"></div>   
+    <div class="comet"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+        <header class="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
+            <div class="flex-shrink-0">
+                <h1 class="text-3xl font-light tracking-[0.2em] text-white">
+                    ASTRO<span class="text-indigo-500 font-semibold">DAT</span>PRO
+                </h1>
+                <p class="text-[10px] text-slate-500 tracking-[0.3em] uppercase">Deep Sky Observation Log</p>
+            </div>
+        
+            <div class="flex-1 max-w-xl w-full relative group">
+                <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="search" 
+                       name="q" 
+                       placeholder="Search database..." 
+                       class="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-full text-sm font-light outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all"
+                       hx-get="/search" 
+                       hx-trigger="keyup changed delay:500ms, search" 
+                       hx-target="#target-list" 
+                       hx-indicator="#search-spinner">
+                
+                <div id="search-spinner" class="htmx-indicator absolute right-4 top-3">
+                    <div class="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                </div>
+            </div>
+        
+            <div class="flex flex-col items-end gap-1">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                    <span class="font-mono text-[10px] tracking-widest text-slate-400">SYSTEM LIVE</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-[9px] text-slate-600 uppercase tracking-widest">Records</span>
+                    <span class="text-xl font-mono font-light text-indigo-400">
+                        {{ total_count | compact_number }}
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        {% block content %}{% endblock %}
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% for target in targets %}
+    {% include 'fragments/target_row.html' %}
+{% endfor %}
+
+{% if targets|length == 50 %}
+<div id="infinite-scroll-sentinel" 
+     hx-get="/search?page={{ next_page }}&q={{ query }}" 
+     hx-trigger="revealed" 
+     hx-target="#infinite-scroll-sentinel" 
+     hx-swap="outerHTML"
+     class="flex justify-center p-8">
+    <div class="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+</div>
+{% endif %}

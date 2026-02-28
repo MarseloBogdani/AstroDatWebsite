@@ -1,151 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el" class="dark" translate="no" style="color-scheme: dark;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="google" content="notranslate">
+    
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <title>AstroDat Observer Pro</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Επιβολή στην Tailwind να χρησιμοποιεί την κλάση .dark που βάλαμε στο html tag
+        tailwind.config = {
+            darkMode: 'selector',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
+        /* 1. iPhone Fix & Base Colors */
+        :root { 
+            color-scheme: dark !important; 
+        }
+
+        html {
+            background-color: #020617 !important; /* Slate-950: Το "δίχτυ ασφαλείας" για το iPhone */
+        }
+
+        html {
+            background-color: #020617 !important; /* Slate-950 */
+        }
+
         body {
             margin: 0;
+            padding: 0;
             min-height: 100vh;
-            color: #e2e8f0;
-            background: linear-gradient(-45deg, #0f172a, #020617);
-            background-size: 400% 400%;
-            animation: gradientBG 90s ease infinite;
-            background-attachment: fixed;
+            color: #f1f5f9;
+            background: transparent; 
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            overscroll-behavior: none;
+            position: relative;
         }
-    
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-    
+
+        /* 2. Μόνο τα αστέρια (χωρίς το κινούμενο gradient) */
         body::before {
             content: "";
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
+            inset: 0;
+            /* Μόνο τα radial gradients των αστεριών πάνω σε ένα σταθερό σκούρο χρώμα */
+            background: 
                 radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
                 radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
                 radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0));
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+                #020617; /* Σταθερό χρώμα αντί για linear-gradient */
             background-repeat: repeat;
-            background-size: 200px 200px;
-            opacity: 0.3;
+            background-size: 250px 250px;
+            opacity: 0.4;
             z-index: -1;
-            animation: starsMove 100s linear infinite;
-        }
-    
+            /* Κρατάμε μόνο την κίνηση των αστεριών αν τη θέλεις, αλλιώς τη σβήνεις και αυτή */
+            animation: starsMove 150s linear infinite;
+                }
+
         @keyframes starsMove {
             from { transform: translateY(0); }
             to { transform: translateY(-200px); }
         }
-    
+
+        /* 4. UI Components */
         .glass {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
-        
+
         .glass:hover {
-            border-color: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .vignette {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0) 70%, rgba(1, 0, 11, 0.3) 100%);
+            inset: 0;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0) 70%, rgba(1, 0, 11, 0.4) 100%);
             pointer-events: none;
             z-index: 50;
         }
 
-        @media (min-width: 1024px) {
-            .vignette {
-                background: radial-gradient(circle, rgba(255, 255, 255, 0) 60%, rgba(1, 0, 11, 0.7) 100%);
+        /* 5. Mobile & Desktop Optimization */
+        @media (max-width: 768px) {
+            .glass {
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                background: rgba(255, 255, 255, 0.04); 
             }
-}
-
-        .comet {
-            position: fixed;
-            top: -10%;
-            left: -10%;
-            width: 200px;
-            height: 4px;
-            background: radial-gradient(ellipse at right, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0) 80%);
-            opacity: 0;
-            z-index: 5;
-            pointer-events: none;
-            border-radius: 50%;
-            animation: shootingStar 105s linear infinite;
         }
 
-        .comet::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 6px;
-            height: 3px;
-            background: rgba(88, 87, 87, 0.33);
-            border-radius: 50%;
-            box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0), 0 0 30px 5px rgba(240, 6, 6, 0);
-        }
-
-        @keyframes shootingStar {
-            0% { transform: translate(-200px, -200px) rotate(45deg); opacity: 0; }
-            2% { opacity: 1; }
-            8% { transform: translate(120vw, 120vh) rotate(45deg); opacity: 0; }
-            100% { transform: translate(120vw, 120vh) rotate(45deg); opacity: 0; }
-        }
-
-       
         .expandable-content {
             display: none; 
             opacity: 0;
-            transform: translateY(-8px); /* Μικρότερη μετατόπιση για πιο snappy αίσθηση */
+            transform: translateY(-8px);
             transition: opacity 0.2s ease-out, transform 0.2s ease-out;
         }
 
-        /* 2. Η κλάση που ενεργοποιείται με το κλικ */
         .expandable-content.is-open {
             display: block;
             opacity: 1;
             transform: translateY(0);
         }
 
-        /* 3. Απενεργοποίηση του Blur μόνο στο ανοιγμένο μέρος */
         .no-blur-mobile {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
-            /* Χρησιμοποίησε ένα χρώμα που ταιριάζει με το "glass" σου */
-            background: rgba(1, 0, 11, 0.038);
+            background: rgba(1, 0, 11, 0.6);
+            border-radius: 0 0 1rem 1rem;
         }
 
-        /* 4. Γενική βελτιστοποίηση για κινητά */
-        @media (max-width: 768px) {
-            .glass {
-                backdrop-filter: blur(4px); /* Χαμηλό blur για να μην κολλάει το scrolling */
-                -webkit-backdrop-filter: blur(4px);
-                background: rgba(255, 255, 255, 0.022); 
-            }
+        .htmx-swapping {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
         }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-12 relative">
-    <div class="animated-bg"></div>
     <div class="vignette"></div>   
     <div class="comet"></div>
 

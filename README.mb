@@ -1,0 +1,84 @@
+*Under Develompent!
+Μια εφαρμογή Web βασισμένη στο Flask για την καταγραφή, διαχείριση και αναζήτηση αστρονομικών παρατηρήσεων.
+Το σύστημα ενσωματώνει validation για ουράνιες συντεταγμένες και υποστηρίζει διαχείριση μεγάλου όγκου 
+δεδομένων μέσω pagination.
+
+Requirements
+ Python 3.8+
+ Flask
+
+Πως λειτουργεί (backend)-> 
+	Τεχνολογίες: Flask,SQLite.
+	
+		Δομή:
+		-app.py: Ο ελεγκτής (Controller) και τα endpoints της εφαρμογής. 
+		 Διαχειρίζεται το routing και το rendering των templates 
+		 (συμπεριλαμβανομένων HTMX-style fragments).
+		
+		-AstroService.py: Business Logic Layer. Περιλαμβάνει την επικύρωση 
+		 των δεδομένων και την επικοινωνία με το Database μέσω του 
+		 ObservationRepository Protocol.
+		
+		-AstroDatabase.py: Data Access Layer.Διαχειρίζεται τα SQL queries σε 
+		 SQLite βάση.
+		
+		-models.py: Ορισμός των Data Classes για την ομοιομορφία της διακίνησης δεδομένων.
+	
+Πως λειτουργεί (frontend)->
+	(Για την Δημιουγρία του frontend, χρησιμοποιήθηκε το ai αρκετά.)
+	Τεχνολογίες: HMTX,Tailwind CSS, Jinja2 Templates.
+		
+		Δομή:
+		-layout.html: boilerplate που περιέχει τα scripts και τα κοινά στοιχεία.
+		
+		-dashboard.html: Η κύρια διεπαφή που ενσωματώνει τη φόρμα εισαγωγής, τη γραμμή 
+		 αναζήτησης και τον πίνακα αποτελεσμάτων.
+		
+		Fragments:
+			-target_row.html: HTML snippet για μια μεμονωμένη γραμμή δεδομένων στον πίνακα.
+			
+			-search_results.html: Επιστρέφει τα αποτελέσματα της αναζήτησης για injection στον πίνακα.
+			
+			-load_more_trigger.html: Υλοποιεί Infinite Scroll,
+			 όταν ο χρήστης φτάσει στο τέλος της λίστας.
+			 
+		Static:
+			-coords.js:Επιβάλλει μορφοποίηση σε πραγματικό χρόνο για τις συντεταγμένες Right Ascension
+			 Declination.
+
+	
+	UX Flow:
+		-Αναζήτηση: Με κάθε πληκτρολόγηση ( μετά από καθυστέρηση), το HTMX στέλνει ένα GET request στο 
+		 /search και αντικαθιστά το περιεχόμενο του πίνακα με το fragment που επιστρέφει ο server.
+		
+		-Προσθήκη: Η υποβολή της φόρμας στέλνει ένα POST request. Αν η εισαγωγή είναι επιτυχής, ο server 
+		 επιστρέφει ένα target_row.html το οποίο προστίθεται στην αρχή της λίστας.
+		
+		-Διαγραφή: Το HTMX στέλνει ένα DELETE request και αφαιρεί το αντίστοιχο DOM στοιχείο από τη σελίδα 
+		 μόλις λάβει επιβεβαίωση 200 OK
+		 
+Κριτική:
+	-Επιδόσεις: Για τον μεγάλο όγκο δεδομένων , η SQLite θα χρειαστεί 
+	 indexing στο πεδίο target_name για να παραμείνει η αναζήτηση αποδοτική.
+	 
+	-Εrrors: Ελλειπές error-handling που θα διορθωθει στο μέλλον.
+	
+	-Connection Overhead:Η μέθοδος _get_connection ανοίγει και κλείνει μια νέα σύνδεση σε κάθε κλήση.
+	 Στο μελλον σκοπέυω να αλλαξαω την βαση σε sqlAlchemy οποτε για τωρα παραμένει ως είναι.
+	 
+	 
+Μελλον:
+	-Στο μελλον θα εισαχθουν users, editing, filters, και περισσότερος στοιβαρός κωδικας
+	
+	
+	
+Για να το τρέξετε:
+	git clone [https://github.com/MarseloBogdani/AstroDatWebsite]
+	cd [folder-name]
+	pip install flask
+	
+	-Το αρχείο seed_db.py επιτρέπει τη δημιουργία εκατομμυρίων 
+	εγγραφών για stress testing.
+	
+	-Τελικη εκτελεση:
+	 python app.py

@@ -1,6 +1,0 @@
-1. φτιαχνουμε frontend για login και register(με το που μπει στην εφαρμογη ο χρηστης μπαινει στο login)
-2. φτιαχνουμε endpoint για /login και /register
-3.οταν τελειωσει το register, κανουμε render το login
-4.οταν τελειωσει το login, κανουμε render το dashboard.html
-5. βαζουμε ενα κουμπι στο dashboard για να κανεις logout με endpoint και ολα
-6. μαθε για flask_login app

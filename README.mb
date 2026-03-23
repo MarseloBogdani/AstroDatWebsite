@@ -38,8 +38,19 @@
 ---
 
 ## 🚀 Εγκατάσταση & Εκτέλεση
-
-1. **Κλωνοποίηση αποθετηρίου:**
-   ```bash
    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
    cd AstroDatWebsite
+   (requirements)
+   pip install flask
+   (εκτέλεση)
+   python app.py
+
+Roadmap
+[ ] Μετάβαση σε SQLAlchemy (ORM).
+[ ] Προσθήκη συστήματος χρηστών (Flask-Authentication).
+[ ] Advanced Filters (Magnitude, Constellation).
+[ ] Λειτουργία επεξεργασίας (Editing) υπαρχουσών εγγραφών.
+
+Note: Το frontend αναπτύχθηκε με την υποβοήθηση AI εργαλείων.
+   
+

@@ -6,7 +6,7 @@
 
 ---
 
-## 🏗 Αρχιτεκτονική Συστήματος
+## Αρχιτεκτονική Συστήματος
 Η εφαρμογή ακολουθεί το **Layered Architecture** μοτίβο για τον πλήρη διαχωρισμό των ευθυνών (Separation of Concerns).
 
 ### Backend (Python / Flask)
@@ -22,7 +22,7 @@
 
 ---
 
-## 🌊 UX & Ροή Δεδομένων
+## UX & Ροή Δεδομένων
 * **Live Search:** Με κάθε πληκτρολόγηση (με debounce), το HTMX στέλνει `GET` request στο `/search` και αντικαθιστά τον πίνακα με τα νέα αποτελέσματα.
 * **Optimistic Updates:** Η προσθήκη (`POST`) και η διαγραφή (`DELETE`) στοιχείων ενημερώνουν το DOM άμεσα μέσω των επιστρεφόμενων fragments (`target_row.html`).
 * **Infinite Scroll:** Χρήση του `load_more_trigger.html` για αυτόματη φόρτωση δεδομένων όταν ο χρήστης φτάνει στο τέλος της λίστας.
@@ -30,14 +30,14 @@
 
 ---
 
-## 🛠 Τεχνική Ανάλυση & Bottlenecks
+## Τεχνική Ανάλυση & Bottlenecks
 * **Performance:** Για stress testing εκατομμυρίων εγγραφών, απαιτείται η προσθήκη **Indexing** στο πεδίο `target_name` της SQLite.
 * **Connection Management:** Η τρέχουσα μέθοδος `_get_connection` ανοίγει/κλείνει σύνδεση σε κάθε κλήση. Σχεδιάζεται μετάβαση σε **SQLAlchemy** για Connection Pooling.
 * **Error Handling:** Προβλέπεται ενίσχυση του error-handling για την επιστροφή ακριβών HTTP Status Codes σε περίπτωση αποτυχίας του validation.
 
 ---
 
-## 🚀 Εγκατάσταση & Εκτέλεση
+## Εγκατάσταση & Εκτέλεση
    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
    cd AstroDatWebsite
    (requirements)

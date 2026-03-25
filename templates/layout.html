@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="google" content="notranslate">
-    
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#020617">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <title>AstroDat Observer Pro</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script>
         // Επιβολή στην Tailwind να χρησιμοποιεί την κλάση .dark που βάλαμε στο html tag
         tailwind.config = {
@@ -21,169 +26,73 @@
             theme: {
                 extend: {
                     colors: {
-                        slate: { 950: '#020617' }
+                        slate: { 950: '#020617' },
+                        astro: { 
+                            accent: '#4da6ff',
+                            bg: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <style>
-        /* 1. iPhone Fix & Base Colors */
-        :root { 
-            color-scheme: dark !important; 
-        }
-
-        html {
-            background-color: #020617 !important; /* Slate-950: Το "δίχτυ ασφαλείας" για το iPhone */
-        }
-
-        html {
-            background-color: #020617 !important; /* Slate-950 */
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            color: #f1f5f9;
-            background: transparent; 
-            font-family: ui-sans-serif, system-ui, sans-serif;
-            overscroll-behavior: none;
-            position: relative;
-        }
-
-        /* 2. Μόνο τα αστέρια (χωρίς το κινούμενο gradient) */
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            /* Μόνο τα radial gradients των αστεριών πάνω σε ένα σταθερό σκούρο χρώμα */
-            background: 
-                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
-                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
-                #020617; /* Σταθερό χρώμα αντί για linear-gradient */
-            background-repeat: repeat;
-            background-size: 250px 250px;
-            opacity: 0.4;
-            z-index: -1;
-            /* Κρατάμε μόνο την κίνηση των αστεριών αν τη θέλεις, αλλιώς τη σβήνεις και αυτή */
-            animation: starsMove 150s linear infinite;
-                }
-
-        @keyframes starsMove {
-            from { transform: translateY(0); }
-            to { transform: translateY(-200px); }
-        }
-
-        /* 4. UI Components */
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .glass:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .vignette {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0) 70%, rgba(1, 0, 11, 0.4) 100%);
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        /* 5. Mobile & Desktop Optimization */
-        @media (max-width: 768px) {
-            .glass {
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
-                background: rgba(255, 255, 255, 0.04); 
-            }
-        }
-
-        .expandable-content {
-            display: none; 
-            opacity: 0;
-            transform: translateY(-8px);
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-        }
-
-        .expandable-content.is-open {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .no-blur-mobile {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            background: rgba(1, 0, 11, 0.6);
-            border-radius: 0 0 1rem 1rem;
-        }
-
-        .htmx-swapping {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-        }
-    </style>
 </head>
-<body class="min-h-screen p-4 md:p-12 relative">
-    <div class="vignette"></div>   
-    <div class="comet"></div>
-
-    <div class="max-w-6xl mx-auto relative z-10">
-        <header class="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
-            <div class="flex-shrink-0">
-                <h1 class="text-3xl font-light tracking-[0.2em] text-white">
-                    ASTRO<span class="text-indigo-500 font-semibold">DAT</span>PRO
-                </h1>
-                <p class="text-[10px] text-slate-500 tracking-[0.3em] uppercase">Deep Sky Observation Log</p>
-            </div>
-        
-            <div class="flex-1 max-w-xl w-full relative group">
-                <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <input type="search" 
-                       name="q" 
-                       placeholder="Search database..." 
-                       class="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-full text-sm font-light outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all"
-                       hx-get="/search" 
-                       hx-trigger="keyup changed delay:500ms, search" 
-                       hx-target="#target-list" 
-                       hx-indicator="#search-spinner">
-                
-                <div id="search-spinner" class="htmx-indicator absolute right-4 top-3">
-                    <div class="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                </div>
-            </div>
-        
-            <div class="flex flex-col items-end gap-1">
-                <div class="flex items-center gap-2">
-                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                    <span class="font-mono text-[10px] tracking-widest text-slate-400">SYSTEM LIVE</span>
-                </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-[9px] text-slate-600 uppercase tracking-widest">Records</span>
-                    <span class="text-xl font-mono font-light text-indigo-400">
-                        {{ total_count | compact_number }}
-                    </span>
-                </div>
-            </div>
-        </header>
-
-        {% block content %}{% endblock %}
+<body class="loading min-h-screen p-4 md:p-12 relative"> 
+    <div id="intro-loader" aria-hidden="true">
+        <div class="logo-wrap" id="logo">
+            <span>ASTRO</span><span class="dat">DAT</span><span class="pro">PRO</span>
+        </div>
     </div>
-    {% block scripts %}{% endblock %}
+    <div id="main-wrapper" class="max-w-6xl mx-auto relative z-10">
+            <header class="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-3xl font-light tracking-[0.2em] text-white">
+                        ASTRO<span class="text-indigo-500 font-semibold">DAT</span>PRO
+                    </h1>
+                    <p class="text-[10px] text-slate-500 tracking-[0.3em] uppercase">Deep Sky Observation Log</p>
+                </div>
+            
+                <div class="flex-1 max-w-xl w-full relative group">
+                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="search" 
+                        name="q" 
+                        placeholder="Search database..." 
+                        class="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-full text-sm font-light outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all"
+                        hx-get="/search" 
+                        hx-trigger="keyup changed delay:500ms, search" 
+                        hx-target="#target-list" 
+                        hx-indicator="#search-spinner">
+                    
+                    <div id="search-spinner" class="htmx-indicator absolute right-4 top-3">
+                        <div class="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    </div>
+                </div>
+            
+                <div class="flex flex-col items-end gap-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                        <span class="font-mono text-[10px] tracking-widest text-slate-400">SYSTEM LIVE</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-[9px] text-slate-600 uppercase tracking-widest">Records</span>
+                        <span class="text-xl font-mono font-light text-indigo-400">
+                            {{ total_count | compact_number }}
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            {% block content %}{% endblock %}
+    </div>
+    <script src="{{ url_for('static', filename='intro.js') }}"></script>
+    {% block scripts %}
+    {% endblock %}
 </body>
 </html>

@@ -1,0 +1,160 @@
+        /* 1. iPhone Fix & Base Colors */
+        :root {
+            --astro-bg: #020617;
+            --astro-accent: #4934c2;
+            --astro-text: #e6e6e6;
+        }
+
+        html { background-color: var(--astro-bg); }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: #f1f5f9;
+            background: transparent; 
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            overscroll-behavior: none;
+            position: relative;
+        }
+
+        /* 2. Μόνο τα αστέρια (χωρίς το κινούμενο gradient) */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            /* Μόνο τα radial gradients των αστεριών πάνω σε ένα σταθερό σκούρο χρώμα */
+            background: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+                #020617; /* Σταθερό χρώμα αντί για linear-gradient */
+            background-repeat: repeat;
+            background-size: 250px 250px;
+            opacity: 0.4;
+            z-index: -1;
+            /* Κρατάμε μόνο την κίνηση των αστεριών αν τη θέλεις, αλλιώς τη σβήνεις και αυτή */
+            animation: starsMove 150s linear infinite;
+                }
+
+        @keyframes starsMove {
+            from { transform: translateY(0); }
+            to { transform: translateY(-200px); }
+        }
+
+        /* 4. UI Components */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .glass:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+    
+        #intro-loader {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            background: var(--astro-bg);
+            z-index: 10000;
+            overflow: hidden;
+        }
+
+        .logo-wrap {
+            display: flex;
+            gap: 0.15rem;
+            font-size: clamp(2.5rem, 12vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--astro-text);
+            opacity: 0;
+            filter: blur(15px);
+            transform: translateY(-150vh);
+        }
+
+        .logo-wrap .dat { color: var(--astro-accent); }
+        .logo-wrap .pro { font-weight: 300; opacity: 0.7; }
+
+        /* 5. Mobile & Desktop Optimization */
+        @media (max-width: 768px) {
+            .glass {
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                background: rgba(255, 255, 255, 0.04); 
+            }
+        }
+
+        @keyframes astroFlow {
+            0%   { transform: translateY(-100vh) scale(0.8); filter: blur(20px); opacity: 0; }
+            35%  { transform: translateY(0) scale(1.05); filter: blur(0); opacity: 1; }
+            45%  { transform: translateY(0) scale(1); filter: blur(0); opacity: 1; }
+            75%  { transform: translateY(0) scale(1); filter: blur(0); opacity: 1; }
+            100% { transform: translateY(100vh) scale(0.95); filter: blur(10px); opacity: 0; }
+        }
+
+        .animate-logo {
+            animation: astroFlow 3.5s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--astro-accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10001;
+            box-shadow: 0 0 8px var(--astro-accent);
+        }
+
+        /* 4. Site Reveal Logic */
+        #main-wrapper {
+            opacity: 1;
+            transform: none;
+            transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #main-wrapper.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.loading #main-wrapper {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .expandable-content {
+            display: none; 
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .expandable-content.is-open {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .no-blur-mobile {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: rgba(1, 0, 11, 0.6);
+            border-radius: 0 0 1rem 1rem;
+        }
+
+        .htmx-swapping {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+        }

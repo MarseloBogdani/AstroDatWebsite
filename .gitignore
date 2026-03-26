@@ -1,5 +1,12 @@
 .venv
 venv/
-__pycache/
-.vscode/*
+env/
+__pycache__/
+.vscode/
 .env
+tailwind.exe
+node_modules/
+package-lock.json
+package.json
+tailwind.config.js
+src/input.css

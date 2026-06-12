@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="el" class="dark" translate="no" style="color-scheme: dark;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="google" content="notranslate">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>AstroDat Observer Pro - Authentication</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'selector',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 950: '#020617' },
+                        astro: { 
+                            accent: '#4da6ff',
+                            bg: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        
+        @keyframes smoothReveal {
+            0% { opacity: 0; transform: translateY(15px); filter: blur(4px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .premium-auth-box {
+            animation: smoothReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            background: rgba(3, 2, 14, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.7), 0 0 100px rgba(79, 70, 229, 0.08);
+        }
+
+        /* Καθαρά, όμορφα Inputs με σωστό ύψος και padding */
+        .premium-input {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 14px 16px !important;
+            border-radius: 8px !important; /* Ελαφρώς στρογγυλεμένα για να μην είναι "σκληρά" */
+            color: #ffffff !important;
+            font-size: 14px !important;
+            transition: all 0.25s ease;
+            width: 100% !important;
+            outline: none !important;
+        }
+
+        .premium-input:focus {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15) !important;
+        }
+
+        /* Elegant Κουμπί */
+        .premium-btn {
+            background: #4f46e5;
+            color: white;
+            padding: 14px 0;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            font-size: 12px;
+            text-transform: uppercase;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .premium-btn:hover {
+            background: #4338ca;
+            box-shadow: 0 4px 25px rgba(79, 70, 229, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        .premium-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen w-screen m-0 p-6 relative flex items-center justify-center bg-[#020617] text-slate-100 overflow-hidden"> 
+    
+    <div id="main-wrapper" class="w-full flex flex-col items-center justify-center relative z-10">
+        {% block auth_content %}{% endblock %}
+    </div>
+
+</body>
+</html>

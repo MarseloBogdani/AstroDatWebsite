@@ -58,7 +58,6 @@ def add_target():
     except ValueError as e:
         return str(e), 400
 
-
 @app.route("/delete-target/<int:target_id>", methods=["DELETE"])
 def delete_target(target_id):
     success = astro_service.delete_observation_service(target_id)
@@ -104,5 +103,12 @@ def search():
         next_page=page + 1 
     )
 
+@app.route("/login")
+def login():
+    return render_template('login.html', total_count=0)
+
+@app.route("/signup")
+def signup():
+    return render_template('signup.html', total_count=0)
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

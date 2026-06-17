@@ -1,6 +1,11 @@
+from queue import Full
 import sqlite3
 from datetime import datetime
-from models import Observation
+from typing import Optional
+from models import Observation,User
+
+class InvalidUsernameError(Exception):
+    pass
 
 class DatabaseManager:
     def __init__(self, db_path="astro_dat.db"):
@@ -13,9 +18,10 @@ class DatabaseManager:
         return conn
 
     def _init_db(self):
-        query = """
+        query1 = """
             CREATE TABLE IF NOT EXISTS observations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_user INTEGER,
                 target_name TEXT NOT NULL,
                 ra TEXT NOT NULL,
                 declination TEXT NOT NULL,
@@ -23,8 +29,17 @@ class DatabaseManager:
                 created_at TEXT
             )
         """
+        query2 = """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                created_at TEXT NOT NULL
+        )"""
+
         with self._get_connection() as conn:
-            conn.execute(query)
+            conn.execute(query1)
+            conn.execute(query2)
 
     def get_recent_observations(self, limit=50, offset=0):
         with self._get_connection() as conn:
@@ -37,12 +52,12 @@ class DatabaseManager:
             cursor = conn.execute("SELECT COUNT(*) FROM observations")
             return cursor.fetchone()[0]
 
-    def add_observation(self, name, ra, dec, notes):
+    def add_observation(self, name, ra, dec, notes, user_id):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "INSERT INTO observations (target_name, ra, declination, notes, created_at) VALUES (?, ?, ?, ?, ?)",
-                (name, ra, dec, notes, timestamp)
+                "INSERT INTO observations (id_user,target_name,ra,declination,notes,created_at) VALUES (?,?,?,?,?,?)",
+                (user_id,name, ra, dec, notes, timestamp)
             )
             new_id = cursor.lastrowid
             conn.commit()
@@ -64,3 +79,35 @@ class DatabaseManager:
             cursor = conn.execute(sql, (search_term, limit, offset))
             return [Observation.from_row(row) for row in cursor.fetchall()]
         
+    def add_user(self, username: str, hashed_password: str) -> User:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "INSERT INTO users (username, password, created_at) VALUES (?,?,?)",
+                (username,hashed_password,timestamp)
+            )
+        new_id = cursor.lastrowid
+        conn.commit()
+        return User(new_id,username,hashed_password,timestamp)
+        
+    def delete_user(self, target_id: int) -> bool:
+
+
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.execute("DELETE FROM users WHERE id = ?", (target_id))
+                conn.commit()
+                return cursor.rowcount > 0
+        except sqlite3.Error:
+            return False
+    
+    def get_user(self, username: str):
+        with self._get_connection() as conn:
+            cursor = conn.execute("SELECT id, username, password, created_at FROM users WHERE username = ? LIMIT 1", (username,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+            return User.from_row(row)
+            
+            

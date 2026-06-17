@@ -23,11 +23,8 @@ def seed_data(count=100):
 ]
     print(f"Ξεκινάει η προσθήκη {count} εγγραφών...")
 
-    for i in range(count):
-        name = f"{random.choice(prefixes)} {random.randint(1, 8000)} {random.choice(objects)}"
-        ra = f"{random.randint(0, 23):02}h {random.randint(0, 59):02}m {random.randint(0, 59):02}s"
-        dec = f"{random.choice(['', '-'])}{random.randint(0, 89):02}° {random.randint(0, 59):02}' {random.randint(0,59):02}''"
-        notes_list = [
+
+    notes_list = [
             "Clear skies, excellent visibility.",
             "Slight light pollution from the city.",
             "Used a 10-inch Dobsonian telescope.",
@@ -35,8 +32,14 @@ def seed_data(count=100):
             "Very faint, required averted vision.",
             ""
         ]
+    
+    for i in range(count):
+        name = f"{random.choice(prefixes)} {random.randint(1, 8000)} {random.choice(objects)}"
+        ra = f"{random.randint(0, 23):02}h {random.randint(0, 59):02}m {random.randint(0, 59):02}s"
+        dec = f"{random.choice(['', '-'])}{random.randint(0, 89):02}° {random.randint(0, 59):02}' {random.randint(0,59):02}''"
         notes = random.choice(notes_list)
-        service.add_observation(name, ra, dec, notes)
+        user_id = 0
+        service.add_observation(name, ra, dec, notes, user_id)
         
         if (i + 1) % 10 == 0:
             print(f"Προστέθηκαν {i + 1} εγγραφές...")

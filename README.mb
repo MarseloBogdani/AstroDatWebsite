@@ -42,6 +42,7 @@
    cd AstroDatWebsite
    (requirements)
    pip install flask
+   pip install flaskBcrypt
    (εκτέλεση)
    python app.py
 

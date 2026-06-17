@@ -1,15 +1,21 @@
 import os
-from flask import Flask, render_template, request
+from queue import Full
+from flask import Flask, render_template, request, make_response, session
 from AstroDatabase import DatabaseManager
-from AstroService import AstroService
+from AstroService import AstroService, UserAlreadyExistsError, UserNotFoundError, WrongPasswordError
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key")
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "astro_dat.db")
 
+bcrypt = Bcrypt(app)
+
 astro_database = DatabaseManager(db_path=db_path)
-astro_service = AstroService(astro_database) 
+astro_service = AstroService(astro_database,bcrypt) 
 
 
 @app.template_filter('compact_number')
@@ -47,12 +53,16 @@ def add_target():
     if not name:
         return "Target name is required" , 400
 
+    user_id = session["user_id"]    
+    if not user_id:
+        return "You must be Logged Observer to log", 400
     try:
         new_entry = astro_service.add_observation_service(
             name=name,
             ra=request.form.get("ra", ""),
             dec=request.form.get("dec", ""),
-            notes=request.form.get("notes", "")
+            notes=request.form.get("notes", ""),
+            user_id=user_id         
         )
         return render_template("fragments/target_row.html", target=new_entry)
     except ValueError as e:
@@ -107,8 +117,64 @@ def search():
 def login():
     return render_template('login.html', total_count=0)
 
+@app.route("/login-process", methods=['POST'])
+def login_process():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+
+    if not username or not password:
+        return "Username and password are required.", 400
+    if len(password) < 8:
+        return "Password must be at least 8 characters long.", 400
+    
+    try:
+        user = astro_service.auth_service(username, password)
+
+        session["user_id"] = user.id
+        session["username"] = user.username
+
+        response = make_response("", 200)
+        response.headers['HX-Redirect'] = '/'
+        return response
+    except (UserNotFoundError, WrongPasswordError) as e:
+        return str(e), 200  
+    except Exception as e:
+        print(e)
+        return "An internal server error occurred.", 200
+    
 @app.route("/signup")
 def signup():
     return render_template('signup.html', total_count=0)
+
+@app.route("/signup-process" , methods=['POST'])
+def signup_process():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+
+    if (not username) or (not password):
+        return "Username and password is required" , 200
+    
+    if len(password) < 8:
+        return "password must be at least 8 characters long.", 200
+    
+    try:
+        print("Attempting to call astro_service.add_user_service...")
+        astro_service.add_user_service(username, password)
+        print("SUCCESS: User added to service")
+
+        response = make_response("Created", 201)
+        response.headers['HX-Redirect'] = '/login'
+        return response
+    except UserAlreadyExistsError as e:
+        print(f"FAIL: UserAlreadyExistsError - {str(e)}")
+        return str(e), 200
+    except Exception as e:
+        import traceback
+        print("CRITICAL LOG: Database or Service Layer Crashed!")
+        print(f"Error Message: {str(e)}")
+        print("Full Traceback:")
+        traceback.print_exc()
+        return f"Something is wrong with our services. Try again later", 200
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

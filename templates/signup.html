@@ -4,11 +4,11 @@
 <section class="w-[520px] h-[520px] max-w-full premium-auth-box border border-white/[0.06] p-8 pb-10 flex flex-col justify-between rounded-2xl">
     
     <div class="text-center mt-2">
-        <h1 class="text-[10px] font-bold tracking-[0.4em] text-indigo-400 uppercase mb-2">ASTRO<span class="text-white font-light">DAT</span>PRO</h1>
-        <h2 class="text-2xl font-normal text-white tracking-wide">Register Terminal</h2>
+        <h1 class="text-[30px] font-bold tracking-[0.4em] text-indigo-400 uppercase mb-2">ASTRO<span class="text-white font-light">DAT</span>PRO</h1>
+        <h2 class="text-2xl font-normal text-white tracking-wide">Create Account</h2>
     </div>
 
-    <form hx-post="/signup" 
+    <form hx-post="/signup-process" 
           hx-target="#auth-error" 
           hx-swap="innerHTML"
           class="space-y-4">
@@ -16,21 +16,15 @@
         <div id="auth-error" class="text-red-400 text-xs font-semibold min-h-[1.25rem] text-center tracking-wide"></div>
 
         <div class="space-y-2">
-            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Observer Handle</label>
+            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Observer Username</label>
             <input type="text" name="username" required autocomplete="username"
                    placeholder="orion_observer" 
                    class="premium-input">
         </div>
 
-        <div class="space-y-2">
-            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Comms Email</label>
-            <input type="email" name="email" required autocomplete="email"
-                   placeholder="astronomer@universe.com" 
-                   class="premium-input">
-        </div>
 
         <div class="space-y-2">
-            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Security Passphrase</label>
+            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Password</label>
             <input type="password" name="password" required autocomplete="new-password"
                    placeholder="••••••••••••" 
                    class="premium-input">

@@ -7,3 +7,5 @@ class WrongPasswordError(Exception): pass
 class WrongUsernamePasswordFormat(Exception): pass
 
 class InvalidUsernameError(Exception): pass
+
+class DatabaseError(Exception): pass

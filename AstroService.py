@@ -67,7 +67,11 @@ class AstroService:
     
     def add_observation_service(self, name: str, ra: str, dec: str, notes: Optional[str], user_id: int) -> Observation:
         validate_coordinates(ra, dec)
-        return self.db.add_observation(name, ra, dec, notes,user_id)
+        try:
+            return self.db.add_observation(name, ra, dec, notes,user_id)
+        except DatabaseError as e:
+            print(e)
+            raise DatabaseError("Failed to retrieve new observation id")
     
     def search_observations_service(self, query: str, limit: int = 50, offset: int = 0) -> List[Observation]:
         return self.db.search_observations(query, limit, offset)

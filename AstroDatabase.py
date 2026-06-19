@@ -58,8 +58,10 @@ class DatabaseManager:
                 (user_id,name, ra, dec, notes, timestamp)
             )
             new_id = cursor.lastrowid
+            if new_id is None:
+                raise DatabaseError("Failed to retrieve new observation id")
             conn.commit()
-            return Observation(new_id, name, ra, dec, notes, timestamp)  # type: ignore
+            return Observation(new_id, user_id, name, ra, dec, notes, timestamp)
 
     def delete_observation(self, target_id: int) -> bool:
         try:

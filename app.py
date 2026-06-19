@@ -1,5 +1,4 @@
 import os
-from queue import Full
 from flask import Flask, render_template, request, make_response, session
 from AstroDatabase import DatabaseManager
 from AstroService import AstroService
@@ -52,11 +51,10 @@ def index():
 def add_target():
     name = request.form.get("name")
     if not name:
-        return "Target name is required" , 200
-
-    user_id = session["user_id"]    
-    if not user_id:
-        return "You must be Logged Observer to log", 200
+        return "Target name is required" , 400
+  
+    if not(session.get('logged_in')):
+        return "You must be Logged Observer to log", 400
     
     try:
         new_entry = astro_service.add_observation_service(
@@ -64,11 +62,12 @@ def add_target():
             ra=request.form.get("ra", ""),
             dec=request.form.get("dec", ""),
             notes=request.form.get("notes", ""),
-            user_id=user_id         
+            user_id=session["user_id"]         
         )
         return render_template("fragments/target_row.html", target=new_entry)
-    except ValueError as e:
-        return str(e), 200
+    except (ValueError, DatabaseError) as e:
+        return str(e), 400
+    
 
 @app.route("/delete-target/<int:target_id>", methods=["DELETE"])
 def delete_target(target_id):
@@ -135,6 +134,7 @@ def login_process():
 
         session["user_id"] = user.id # type: ignore
         session["username"] = user.username # type: ignore
+        session['logged_in'] = True
 
         response = make_response("", 200)
         response.headers['HX-Redirect'] = '/'

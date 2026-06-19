@@ -2,8 +2,9 @@ import os
 from queue import Full
 from flask import Flask, render_template, request, make_response, session
 from AstroDatabase import DatabaseManager
-from AstroService import AstroService, UserAlreadyExistsError, UserNotFoundError, WrongPasswordError
+from AstroService import AstroService
 from flask_bcrypt import Bcrypt
+from my_exceptions import *
 
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ db_path = os.path.join(basedir, "astro_dat.db")
 bcrypt = Bcrypt(app)
 
 astro_database = DatabaseManager(db_path=db_path)
-astro_service = AstroService(astro_database,bcrypt) 
+astro_service = AstroService(astro_database,bcrypt)  
 
 
 @app.template_filter('compact_number')
@@ -51,11 +52,12 @@ def index():
 def add_target():
     name = request.form.get("name")
     if not name:
-        return "Target name is required" , 400
+        return "Target name is required" , 200
 
     user_id = session["user_id"]    
     if not user_id:
-        return "You must be Logged Observer to log", 400
+        return "You must be Logged Observer to log", 200
+    
     try:
         new_entry = astro_service.add_observation_service(
             name=name,
@@ -66,7 +68,7 @@ def add_target():
         )
         return render_template("fragments/target_row.html", target=new_entry)
     except ValueError as e:
-        return str(e), 400
+        return str(e), 200
 
 @app.route("/delete-target/<int:target_id>", methods=["DELETE"])
 def delete_target(target_id):
@@ -95,8 +97,8 @@ def load_more():
 @app.route("/search")
 def search():
     query = request.args.get('q', '').strip()
-    if len(query) > 60:
-        return "Query too long", 400
+    if len(query) > 40:
+        return "Query too long. Please make it less than 40 characters!", 200
     page = int(request.args.get('page', 0))
     per_page = 50
     offset = page * per_page
@@ -123,20 +125,21 @@ def login_process():
     password = request.form.get("password", "")
 
     if not username or not password:
-        return "Username and password are required.", 400
+        return "Username and password are required.", 200
     if len(password) < 8:
-        return "Password must be at least 8 characters long.", 400
+        return "Password must be at least 8 characters long.", 200
     
     try:
+        #Ensure user exists and gets a value, otherwise exceptions are raised
         user = astro_service.auth_service(username, password)
 
-        session["user_id"] = user.id
-        session["username"] = user.username
+        session["user_id"] = user.id # type: ignore
+        session["username"] = user.username # type: ignore
 
         response = make_response("", 200)
         response.headers['HX-Redirect'] = '/'
         return response
-    except (UserNotFoundError, WrongPasswordError) as e:
+    except (UserNotFoundError, WrongPasswordError, WrongUsernamePasswordFormat) as e:
         return str(e), 200  
     except Exception as e:
         print(e)
@@ -167,6 +170,8 @@ def signup_process():
         return response
     except UserAlreadyExistsError as e:
         print(f"FAIL: UserAlreadyExistsError - {str(e)}")
+        return str(e), 200
+    except WrongUsernamePasswordFormat as e:
         return str(e), 200
     except Exception as e:
         import traceback

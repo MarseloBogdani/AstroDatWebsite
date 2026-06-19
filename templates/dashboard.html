@@ -14,10 +14,25 @@
                               }"
         hx-on::response-error="document.getElementById('form-error').innerText = event.detail.xhr.responseText"
         class="space-y-4">
-  
+      
+        {% if 'user_id' not in session %}
+        <div class="text-center p-4">
+            <p class="text-sm font-medium text-slate-400">
+                Can't add observations? 
+                <a href="/login" class="text-indigo-400 font-semibold hover:text-indigo-300 hover:underline transition-all duration-200 drop-shadow-[0_0_8px_rgba(79,70,229,0.2)] hover:drop-shadow-[0_0_12px_rgba(129,140,248,0.5)]">
+                    Login
+                </a> 
+                or 
+                <a href="/signup" class="text-indigo-400 font-semibold hover:text-indigo-300 hover:underline transition-all duration-200 drop-shadow-[0_0_8px_rgba(79,70,229,0.2)] hover:drop-shadow-[0_0_12px_rgba(129,140,248,0.5)]">
+                    Sign up!
+                </a>
+            </p>
+        </div>
+        {% endif %}
+
       <div id="form-error" class="text-red-400 text-sm font-bold min-h-[1.25rem]"></div>
 
-            <input name="name" placeholder="Object (e.g. Andromeda)" required class="w-full bg-white/5 p-4 rounded-xl border border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <input name="name" placeholder="Object(e.g. Andromeda)" required class="w-full bg-white/5 p-4 rounded-xl border border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none">
             <input name="ra" placeholder="Right Ascension" required class="coord-mask w-full bg-white/5 p-4 rounded-xl border border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none">
             <input name="dec" placeholder="Declination" required class="dec-mask w-full bg-white/5 p-4 rounded-xl border border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none">
             <textarea name="notes" placeholder="Notes (Optional)..." rows="3" class="w-full bg-white/5 p-4 rounded-xl border border-white/10 outline-none"></textarea>

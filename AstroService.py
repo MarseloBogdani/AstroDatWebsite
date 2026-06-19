@@ -5,8 +5,7 @@ from AstroDatabase import InvalidUsernameError
 from models import Observation,User
 import re
 from flask_bcrypt import Bcrypt
-
-
+from my_exceptions import *
 
 def validate_coordinates(ra: str, dec: str):
     ra_nums = [int(n) for n in re.findall(r'\d+', ra)]
@@ -28,9 +27,18 @@ def validate_coordinates(ra: str, dec: str):
 
     pass
 
-class UserAlreadyExistsError(Exception): pass
-class UserNotFoundError(Exception): pass
-class WrongPasswordError(Exception): pass
+def checked_username_password(username:str, password:str):
+    if (not username) or (not password):
+        raise WrongUsernamePasswordFormat("Username and password is required")
+
+    if len(password) < 8:
+        raise WrongUsernamePasswordFormat("password must be at least 8 characters long.")
+    
+    forbidden_chars = ["'", '"', "^", "&", "-", "*", "<", ">", " "]
+    if any(char in password for char in forbidden_chars):
+        raise WrongUsernamePasswordFormat("password can't contain <>&^*-'" + '"')
+    return True
+    
 
 class DatabaseRepo(Protocol):
     def get_recent_observations(self, limit: int = 50, offset: int = 0) -> List[Observation]: ...
@@ -38,9 +46,9 @@ class DatabaseRepo(Protocol):
     def add_observation(self, name: str, ra: str, dec: str, notes: Optional[str], user_id: int) -> Observation: ...
     def delete_observation(self, target_id: int) -> bool: ... 
     def search_observations(self, query: str, limit: int = 50, offset: int = 0) -> List[Observation]: ...
-    def add_user(self,username: str,hashed_password: str) -> User: ...
-    def delete_user(self,target_id: int) -> bool: ...
-    def get_user(self,username:str): ...
+    def add_user(self, username: str, hashed_password: str) -> Optional[User]: ...
+    def delete_user(self, target_id: int) -> bool: ...
+    def get_user(self, username: str) -> Optional[User]: ...
 
 class AstroService:
     def __init__(self, astro_database: DatabaseRepo,bcrypt_instance) -> None:
@@ -59,42 +67,31 @@ class AstroService:
     
     def add_observation_service(self, name: str, ra: str, dec: str, notes: Optional[str], user_id: int) -> Observation:
         validate_coordinates(ra, dec)
-
         return self.db.add_observation(name, ra, dec, notes,user_id)
     
     def search_observations_service(self, query: str, limit: int = 50, offset: int = 0) -> List[Observation]:
         return self.db.search_observations(query, limit, offset)
     
-    def add_user_service(self, username: str, password: str ):
-
-        if (not username) or (not password):
-            print("Username and password is required")
-            return
-    
-        if len(password) < 8:
-            print("password must be at least 8 characters long.")
-            return
-
-        try:
-            #used bcrypts slow hashing wtih salt instead of custom implementation
-            hashed_password = self.bcrypt.generate_password_hash(password).decode('utf-8')
-            self.db.add_user(username, hashed_password)
-        #if database changes, The IntegrityError exception must be changed too. Don't forget.
-        except IntegrityError: 
-            raise UserAlreadyExistsError(f"Observer username '{username}' is already taken.")
-        except Exception as e:
-            print('hard')
-            raise Exception()
-        
-    def auth_service(self, username: str, password:str):
-        if not username or not password:
-            raise ValueError("Username and password are required.")
+    def add_user_service(self, username: str, password: str ) -> None:
+        if checked_username_password(username,password):
+            try:
+                #used bcrypts slow hashing wtih salt instead of custom implementation
+                hashed_password = self.bcrypt.generate_password_hash(password).decode('utf-8')
+                self.db.add_user(username, hashed_password)
+            except UserAlreadyExistsError: 
+                raise UserAlreadyExistsError(f"Observer username '{username}' is already taken.")
+            except Exception as e:
+                print('debug')
+                raise Exception()
+               
+    def auth_service(self, username: str, password:str) -> Optional[User]:
+        if checked_username_password(username,password):
             
-        user = self.db.get_user(username)
-        if not user:
-            raise UserNotFoundError("Username not found.")
-            
-        if not self.bcrypt.check_password_hash(user.password, password):
-            raise WrongPasswordError("Invalid password. Please try again.")
-            
-        return user
+            user = self.db.get_user(username)
+            if not user:
+                raise UserNotFoundError("Username not found.")
+                
+            if not self.bcrypt.check_password_hash(user.password, password):
+                raise WrongPasswordError("Invalid password. Please try again.")
+                
+            return user

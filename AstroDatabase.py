@@ -3,9 +3,7 @@ import sqlite3
 from datetime import datetime
 from typing import Optional
 from models import Observation,User
-
-class InvalidUsernameError(Exception):
-    pass
+from my_exceptions import *
 
 class DatabaseManager:
     def __init__(self, db_path="astro_dat.db"):
@@ -61,7 +59,7 @@ class DatabaseManager:
             )
             new_id = cursor.lastrowid
             conn.commit()
-            return Observation(new_id, name, ra, dec, notes, timestamp) # type: ignore
+            return Observation(new_id, name, ra, dec, notes, timestamp)  # type: ignore
 
     def delete_observation(self, target_id: int) -> bool:
         try:
@@ -79,29 +77,35 @@ class DatabaseManager:
             cursor = conn.execute(sql, (search_term, limit, offset))
             return [Observation.from_row(row) for row in cursor.fetchall()]
         
-    def add_user(self, username: str, hashed_password: str) -> User:
+    def add_user(self, username: str, hashed_password: str) -> Optional[User]:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with self._get_connection() as conn:
-            cursor = conn.execute(
-                "INSERT INTO users (username, password, created_at) VALUES (?,?,?)",
-                (username,hashed_password,timestamp)
-            )
-        new_id = cursor.lastrowid
-        conn.commit()
-        return User(new_id,username,hashed_password,timestamp)
-        
-    def delete_user(self, target_id: int) -> bool:
-
-
         try:
             with self._get_connection() as conn:
-                cursor = conn.execute("DELETE FROM users WHERE id = ?", (target_id))
+                cursor = conn.execute(
+                    "INSERT INTO users (username, password, created_at) VALUES (?,?,?)",
+                    (username,hashed_password,timestamp)
+                )
+            new_id = cursor.lastrowid
+            conn.commit()
+            if new_id:
+                return User(new_id,username,hashed_password,timestamp)
+            else: 
+                return None
+        except sqlite3.IntegrityError as e:
+            raise UserAlreadyExistsError
+        except Exception as e:
+            print(e)  
+        
+    def delete_user(self, target_id: int) -> bool:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.execute("DELETE FROM users WHERE id = ?", (target_id,))
                 conn.commit()
                 return cursor.rowcount > 0
         except sqlite3.Error:
             return False
     
-    def get_user(self, username: str):
+    def get_user(self, username: str) -> Optional[User]:
         with self._get_connection() as conn:
             cursor = conn.execute("SELECT id, username, password, created_at FROM users WHERE username = ? LIMIT 1", (username,))
             row = cursor.fetchone()
@@ -110,4 +114,10 @@ class DatabaseManager:
                 return None
             return User.from_row(row)
             
+    def search_users_recent(self, user_id: int, limit=50, offset=0) -> list[Observation]:
+        with self._get_connection() as conn:
+            sql = "SELECT * FROM observations WHERE id_user LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            search_term = f"%{user_id}%"
+            cursor = conn.execute(sql, (search_term, limit, offset,))
+            return [Observation.from_row(row) for row in cursor.fetchall()]
             

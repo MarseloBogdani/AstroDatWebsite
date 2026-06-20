@@ -60,8 +60,8 @@ flowchart TD
 ## UX & Data Flow
 * **Live Search:** On each keystroke (with debounce), HTMX sends a GET request to /search and updates the table dynamically
 * **Optimistic Updates:** Insert (`POST`) and delete (`DELETE`) operations update the DOM immediately using returned HTML fragments (`target_row.html`).
-* **Infinite Scroll:** Χρήση του `load_more_trigger.html` για αυτόματη φόρτωση δεδομένων όταν ο χρήστης φτάνει στο τέλος της λίστας.
-* **Real-time Validation:** Το `coords.js` enforces formatting for celestial coordinates (RA/Dec) during input.
+* **Infinite Scroll:** Using `load_more_trigger.html` to automatically load data when the user reaches the end of the list.
+* **Real-time Validation:** `coords.js` enforces formatting for celestial coordinates (RA/Dec) during input.
 
 ---
 
@@ -69,7 +69,7 @@ flowchart TD
 * Dataset Size: 70-80k records
 * Concurrent Users: 100
 * Failure Rate: 0%
-* * Average Response Time: 52 ms
+* Average Response Time: 52 ms
 * Tool: Locust
 ![Screenshot1](Screenshots/Locust_100_users.PNG)
 ---
@@ -94,7 +94,7 @@ flowchart TD
    # Install dependencies
    pip install -r requirements.txt
 
-   # Run the application
+   # Run the application 
    python app.py
 
    ```

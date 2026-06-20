@@ -1,13 +1,15 @@
 import os
-from flask import Flask, render_template, request, make_response, session
+from flask import Flask, render_template, request, make_response, session,redirect, url_for
 from AstroDatabase import DatabaseManager
 from AstroService import AstroService
 from flask_bcrypt import Bcrypt
 from my_exceptions import *
+from datetime import timedelta
 
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key")
+app.permanent_session_lifetime = timedelta(minutes=60)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "astro_dat.db")
@@ -144,7 +146,17 @@ def login_process():
     except Exception as e:
         print(e)
         return "An internal server error occurred.", 200
+
+@app.route("/logout")  
+def logout():
+    session.clear() 
+    return redirect("/")
     
+
+@app.route("/profile", methods=['GET'])
+def profile():
+    return render_template("profile.html")
+
 @app.route("/signup")
 def signup():
     return render_template('signup.html', total_count=0)
@@ -180,6 +192,17 @@ def signup_process():
         print("Full Traceback:")
         traceback.print_exc()
         return f"Something is wrong with our services. Try again later", 200
+
+@app.route("/settings")
+def settings():
+    
+    return render_template("settings.html")
+
+@app.route("/settings_saving_process", methods=["POST"])
+def settings_saving_process():
+    response = make_response("Saved", 200)
+    response.headers['HX-Redirect'] = '/settings'
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

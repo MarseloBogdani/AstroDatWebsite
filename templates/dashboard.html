@@ -1,9 +1,12 @@
 {% extends "layout.html" %}
 
 {% block content %}
+
 <main class="grid grid-cols-1 lg:grid-cols-4 gap-8">
     
-    <section class="lg:col-span-1 glass p-6 rounded-3xl h-fit lg:sticky lg:top-8 z-20 mb-8 lg:mb-0">
+    <section class="lg:col-span-1 glass p-6 rounded-3xl h-fit lg:sticky lg:top-8 z-20 mb-8 lg:mb-0"
+        style="background-image: linear-gradient(rgba(3, 6, 12, 0.88), rgba(15, 23, 42, 0.88)), url('/static/images/background.avif'); background-size: cover; background-position: center;"
+        class="lg:col-span-1 glass p-6 rounded-3xl h-fit lg:sticky lg:top-8 z-20 mb-8 lg:mb-0 relative overflow-hidden">
         <h2 class="text-xl font-bold mb-6 text-indigo-400">Log Observation</h2>
         <form hx-post="/add-target" 
         hx-target="#target-list" 
@@ -25,6 +28,19 @@
                 or 
                 <a href="/signup" class="text-indigo-400 font-semibold hover:text-indigo-300 hover:underline transition-all duration-200 drop-shadow-[0_0_8px_rgba(79,70,229,0.2)] hover:drop-shadow-[0_0_12px_rgba(129,140,248,0.5)]">
                     Sign up!
+                </a>
+            </p>
+        </div>
+        {% else %}
+        <div class="text-center p-4">
+            <p class="text-sm font-medium text-slate-400">
+                Want to 
+                <a href="/logout" class="text-rose-400 font-semibold hover:text-rose-300 hover:underline transition-all duration-200 drop-shadow-[0_0_8px_rgba(244,63,94,0.2)] hover:drop-shadow-[0_0_12px_rgba(251,113,133,0.5)]">
+                    Logout?
+                </a>
+                Want to see your
+                <a href="/profile" class="text-rose-400 font-semibold hover:text-rose-300 hover:underline transition-all duration-200 drop-shadow-[0_0_8px_rgba(244,63,94,0.2)] hover:drop-shadow-[0_0_12px_rgba(251,113,133,0.5)]">
+                    Profile?
                 </a>
             </p>
         </div>
@@ -56,6 +72,7 @@
             </div>
         </div>
     </section>
+    
 </main>
 {% endblock %}
 

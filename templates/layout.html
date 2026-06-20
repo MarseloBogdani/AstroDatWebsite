@@ -23,14 +23,12 @@
     </script>
 </head>
 <body class="loading min-h-screen p-4 md:p-12 relative"> 
-    <div id="canvas-container" class="fixed inset-0 top-0 left-0 w-screen h-screen z-0 pointer-events-none"></div>
-
     <div id="intro-loader" aria-hidden="true">
         <div class="logo-wrap animation-logo" id="logo">
             <span>ASTRO</span><span class="dat">DAT</span><span class="pro">PRO</span>
         </div>
     </div>
-    <div id="main-wrapper" class="max-w-6xl mx-auto relative z-10" style="position: relative;">
+    <div id="main-wrapper" class="max-w-6xl mx-auto relative z-10">
             <header class="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
                 <div class="flex-shrink-0">
                     <h1 class="text-3xl font-light tracking-[0.2em] text-white">
@@ -71,166 +69,11 @@
                         </span>
                     </div>
                 </div>
-                
             </header>
-            
+
             {% block content %}{% endblock %}
     </div>
     <script src="{{ url_for('static', filename='intro.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <script>
-        // 1. SETUP ENVIRONMENT
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-
-        camera.position.z = 5.0; // Pulled back slightly to frame the tilted scene
-        camera.position.y = 1.8; // Raised up higher (Increase this number for a steeper top-down view)
-        camera.lookAt(0, 0, -2);  // CRITICAL: Forces the camera to tilt downward at the black hole 
-
-        // Perfectly round, soft particle texture
-        function createStarTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 16;
-            canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-            gradient.addColorStop(0, 'rgba(255,255,255,1)');
-            gradient.addColorStop(0.3, 'rgba(255,255,255,0.8)');
-            gradient.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 16, 16);
-            return new THREE.CanvasTexture(canvas);
-        }
-        const starTexture = createStarTexture();
-
-        // ==========================================
-        // 2. CRISP BACKGROUND STARS
-        // ==========================================
-        const starCount = 80000;
-        const starGeometry = new THREE.BufferGeometry();
-        const starPositions = new Float32Array(starCount * 3);
-        const starColors = new Float32Array(starCount * 3);
-
-        for (let i = 0; i < starCount; i++) {
-            // Distribute stars randomly in a large cube far away from the camera
-            starPositions[i * 3]     = (Math.random() - 0.5) * 40;
-            starPositions[i * 3 + 1] = (Math.random() - 0.5) * 40;
-            starPositions[i * 3 + 2] = (Math.random() - 0.5) * 20 - 15; // Kept far back
-
-            // Varying star brightness (realism multiplier)
-            const brightness = Math.random() * 0.4 + 0.8; // Forces the random math to pick much higher base brightness levels
-            starColors[i * 3]     = brightness;
-            starColors[i * 3 + 1] = brightness * 0.98; // Subtle natural variations
-            starColors[i * 3 + 2] = brightness * 1.05;
-        }
-
-        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-        starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-
-        const starMaterial = new THREE.PointsMaterial({
-            size: 0.03, // Increased size so they stand out against the dark background
-            vertexColors: true,
-            transparent: true,
-            opacity: 1.0, // Force full, un-faded brightness
-            map: starTexture,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const starField = new THREE.Points(starGeometry, starMaterial);
-        scene.add(starField);
-
-        // ==========================================
-        // 3. REFINED FOREGROUND ACCRETION DISK
-        // ==========================================
-        const particleCount = 300000;
-        const diskGeometry = new THREE.BufferGeometry();
-        const diskPositions = new Float32Array(particleCount * 3);
-        const diskColors = new Float32Array(particleCount * 3);
-
-        const diskHot = new THREE.Color('#ffaa00');  
-        const diskMid = new THREE.Color('#ff2200');  
-        const diskOuter = new THREE.Color('#1f001f'); 
-
-        for(let i = 0; i < particleCount; i++) {
-            const radius = Math.random() * 2.3 + 0.65; 
-            const spin = Math.random() * Math.PI * 2;
-            const thickness = (Math.random() - 0.5) * 0.03 * (radius * 0.5);
-
-            const i3 = i * 3;
-            diskPositions[i3]     = Math.cos(spin) * radius;
-            diskPositions[i3 + 1] = thickness;
-            diskPositions[i3 + 2] = Math.sin(spin) * radius;
-
-            let finalColor;
-            if (radius < 1.1) {
-                finalColor = diskHot.clone().lerp(diskMid, (radius - 0.65) / 0.45);
-            } else {
-                finalColor = diskMid.clone().lerp(diskOuter, (radius - 1.1) / 1.2);
-            }
-            
-            diskColors[i3]     = finalColor.r;
-            diskColors[i3 + 1] = finalColor.g;
-            diskColors[i3 + 2] = finalColor.b;
-        }
-
-        diskGeometry.setAttribute('position', new THREE.BufferAttribute(diskPositions, 3));
-        diskGeometry.setAttribute('color', new THREE.BufferAttribute(diskColors, 3));
-
-        const diskMaterial = new THREE.PointsMaterial({
-            size: 0.015,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.85,
-            map: starTexture,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const accretionDisk = new THREE.Points(diskGeometry, diskMaterial);
-        scene.add(accretionDisk);
-
-        // ==========================================
-        // 4. THE BLACK HOLE CORE
-        // ==========================================
-        const blackHoleGeo = new THREE.SphereGeometry(0.62, 32, 32);
-        const blackHoleMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const blackHole = new THREE.Mesh(blackHoleGeo, blackHoleMat);
-        scene.add(blackHole);
-
-        // ==========================================
-        // 5. ANIMATION LOOP
-        // ==========================================
-        const clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-
-            // Smooth slow rotation
-            accretionDisk.rotation.y = elapsedTime * 0.02; 
-            
-            // Ultra subtle background drift
-            starField.rotation.y = -elapsedTime * 0.001;
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
     {% block scripts %}
     {% endblock %}
 </body>

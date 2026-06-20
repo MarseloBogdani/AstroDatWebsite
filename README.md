@@ -57,7 +57,7 @@ flowchart TD
 
 ---
 
-## UX & Ροή Δεδομένων
+## UX & Data Flow
 * **Live Search:** On each keystroke (with debounce), HTMX sends a GET request to /search and updates the table dynamically
 * **Optimistic Updates:** Insert (`POST`) and delete (`DELETE`) operations update the DOM immediately using returned HTML fragments (`target_row.html`).
 * **Infinite Scroll:** Χρήση του `load_more_trigger.html` για αυτόματη φόρτωση δεδομένων όταν ο χρήστης φτάνει στο τέλος της λίστας.

@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    container_name: astro_web_app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_SECRET_KEY=super-secret-key
+    volumes:
+      - astro_data:/app/instance
+    restart: always
+
+volumes:
+  astro_data:

@@ -82,17 +82,17 @@ flowchart TD
 ---
 
 ## Installation & Setup
-   ```bash
-   #If you have Docker at
-    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
+   ```Bash
+   #If you have Docker
+    git clone https://github.com/MarseloBogdani/AstroDatWebsite.git
     cd AstroDatWebsite
     docker compose up --build
 
    # To stop the application, press Ctrl + C in the terminal, or run docker compose down.
-   # --------------------------
-
+   ```
+   ```Bash
    #With no Docker
-    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
+    git clone https://github.com/MarseloBogdani/AstroDatWebsite.git
 
     cd AstroDatWebsite
 

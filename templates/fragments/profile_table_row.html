@@ -1,0 +1,58 @@
+<tr id="profile-obs-{{ log.id }}" class="hover:bg-white/5 transition-colors duration-150">
+    <td class="p-3 font-semibold text-white">
+        <div class="flex flex-col">
+            <span>{{ log.target_name }}</span>
+            <span class="md:hidden font-mono text-[10px] text-slate-500 mt-1">
+                {{ log.ra }} / {{ log.declination }}
+            </span>
+        </div>
+    </td>
+    <td class="hidden md:table-cell p-3 text-slate-400 font-mono text-xs">{{ log.ra }}</td>
+    <td class="hidden md:table-cell p-3 text-slate-400 font-mono text-xs">{{ log.declination }}</td>
+    <td class="p-3 text-right">
+        <div class="flex items-center justify-end gap-3">
+            <span class="text-xs text-slate-500 font-mono">{{ log.created_at.split(' ')[0] }}</span>
+            
+            <button type="button"
+                    hx-delete="/delete-target/{{ log.id }}"
+                    hx-target="#profile-obs-{{ log.id }}"
+                    hx-swap="outerHTML swap:400ms"
+                    hx-trigger="confirmed"
+                    hx-on:click="
+                        Swal.fire({
+                            title: 'Confirm Deletion',
+                            text: 'Remove {{ log.target_name | escape }} from logs?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#4f46e5', 
+                            cancelButtonColor: '#1e293b', 
+                            confirmButtonText: 'Delete',
+                            background: '#0f172a',   
+                            color: '#f1f5f9'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                htmx.trigger(this, 'confirmed');
+                            }
+                        })
+                    "
+                    hx-on::after-request="
+                        if(event.detail.successful) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'The target has been removed.',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                background: '#0f172a',   
+                                color: '#f1f5f9'
+                            });
+                        }
+                    "
+                    class="p-1.5 text-slate-600 hover:text-red-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+    </td>
+</tr>

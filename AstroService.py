@@ -46,6 +46,8 @@ class DatabaseRepo(Protocol):
     def add_observation(self, name: str, ra: str, dec: str, notes: Optional[str], user_id: int) -> Observation: ...
     def delete_observation(self, target_id: int) -> bool: ... 
     def search_observations(self, query: str, limit: int = 50, offset: int = 0) -> List[Observation]: ...
+    def search_users_recent_observations(self, user_id: int, limit: int = 50, offset: int = 0) -> List[Observation]: ...
+    def count_users_exoplanets(self,user_id: int) -> int: ...
     def add_user(self, username: str, hashed_password: str) -> Optional[User]: ...
     def delete_user(self, target_id: int) -> bool: ...
     def get_user(self, username: str) -> Optional[User]: ...
@@ -99,3 +101,19 @@ class AstroService:
                 raise WrongPasswordError("Invalid password. Please try again.")
                 
             return user
+        
+    def search_users_recent_observations(self, user_id: int, limit=50, offset=0) -> list[Observation]:
+        try:
+            return self.db.search_users_recent_observations(user_id,limit,offset)
+        except Exception as e:
+            print('debug')
+            print(e)
+            raise Exception()
+        
+    def count_users_exoplanets(self,user_id: int) -> int:
+        try:
+            return self.db.count_users_exoplanets(user_id)
+        except Exception as e:
+            print('debug')
+            print(e)
+            raise Exception()

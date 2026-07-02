@@ -116,10 +116,19 @@ class DatabaseManager:
                 return None
             return User.from_row(row)
             
-    def search_users_recent(self, user_id: int, limit=50, offset=0) -> list[Observation]:
+    def search_users_recent_observations(self, user_id: int, limit=50, offset=0) -> list[Observation]:
         with self._get_connection() as conn:
-            sql = "SELECT * FROM observations WHERE id_user LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
-            search_term = f"%{user_id}%"
-            cursor = conn.execute(sql, (search_term, limit, offset,))
+            cursor = conn.execute("SELECT * FROM observations WHERE id_user LIKE ? ORDER BY created_at DESC ", 
+                                  (user_id,))
             return [Observation.from_row(row) for row in cursor.fetchall()]
+        
+    def count_users_exoplanets(self, user_id: int) -> int:
+        
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT COUNT(*) FROM observations WHERE id_user = ? AND target_name LIKE '%Exoplanet%'", 
+                (user_id,)
+            )
+            return cursor.fetchone()[0]
+        
             

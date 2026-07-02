@@ -17,6 +17,12 @@ db_path = os.path.join(basedir, "astro_dat.db")
 bcrypt = Bcrypt(app)
 
 astro_database = DatabaseManager(db_path=db_path)
+
+with astro_database._get_connection() as conn: 
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=10000;")
+
 astro_service = AstroService(astro_database,bcrypt)  
 
 
@@ -70,7 +76,6 @@ def add_target():
     except (ValueError, DatabaseError) as e:
         return str(e), 400
     
-
 @app.route("/delete-target/<int:target_id>", methods=["DELETE"])
 def delete_target(target_id):
     success = astro_service.delete_observation_service(target_id)
@@ -131,18 +136,21 @@ def login_process():
         return "Password must be at least 8 characters long.", 200
     
     try:
-        #Ensure user exists and gets a value, otherwise exceptions are raised
+        # Ensure user exists and gets a value, otherwise exceptions are raised
         user = astro_service.auth_service(username, password)
+        if user is None:
+            return "Invalid username or password.", 200
 
-        session["user_id"] = user.id # type: ignore
-        session["username"] = user.username # type: ignore
+        session["user_id"] = user.id
+        session["username"] = user.username
+        session["created_at"] = user.created_at
         session['logged_in'] = True
 
         response = make_response("", 200)
         response.headers['HX-Redirect'] = '/'
         return response
     except (UserNotFoundError, WrongPasswordError, WrongUsernamePasswordFormat) as e:
-        return str(e), 200  
+        return str(e), 200
     except Exception as e:
         print(e)
         return "An internal server error occurred.", 200
@@ -152,10 +160,29 @@ def logout():
     session.clear() 
     return redirect("/")
     
-
 @app.route("/profile", methods=['GET'])
 def profile():
-    return render_template("profile.html")
+    this_id = session.get("user_id")
+    if this_id:
+
+        page = int(request.args.get('page', 1))
+        per_page = 50
+        offset = page * per_page
+
+        logs = astro_service.search_users_recent_observations(user_id=this_id,limit=per_page,offset=offset)
+        total_logs = len(logs)
+
+        total_exoplanets = astro_service.count_users_exoplanets(user_id=this_id)
+
+        return render_template(
+            "profile.html",
+            username=session.get("username"),
+            created_at=session.get("created_at"),
+            total_logs=total_logs,
+            logs=logs,
+            total_exoplanets=total_exoplanets
+        )
+    return render_template("login.html")
 
 @app.route("/signup")
 def signup():
@@ -203,6 +230,6 @@ def settings_saving_process():
     response = make_response("Saved", 200)
     response.headers['HX-Redirect'] = '/settings'
     return response
-
+    
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

@@ -83,19 +83,28 @@ flowchart TD
 
 ## Installation & Setup
    ```bash
-   git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
+   #If you have Docker at
+    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
+    cd AstroDatWebsite
+    docker compose up --build
 
-   cd AstroDatWebsite
+   # To stop the application, press Ctrl + C in the terminal, or run docker compose down.
+   # --------------------------
+
+   #With no Docker
+    git clone [https://github.com/MarseloBogdani/AstroDatWebsite](https://github.com/MarseloBogdani/AstroDatWebsite)
+
+    cd AstroDatWebsite
 
    # Create virtual environment (Windows)
-   python -m venv venv
-   venv\Scripts\activate
+    python -m venv venv
+    venv\Scripts\activate
 
    # Install dependencies
-   pip install -r requirements.txt
+    pip install -r requirements.txt
 
    # Run the application 
-   python app.py
+    python app.py
 
    ```
 ---

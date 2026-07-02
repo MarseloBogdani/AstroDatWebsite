@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AstroDataPro - Your Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Προσαρμοσμένο στυλ για το Glassmorphism και το αστρικό background */
         body {
             background-color: #030712;
-            background-image: linear-gradient(rgba(3, 6, 12, 0.88), rgba(15, 23, 42, 0.88)), 
+            background-image: linear-gradient(rgba(3, 6, 12, 0.9), rgba(15, 23, 42, 0.9)), 
             url('/static/images/background_resize.avif'); 
             background-size: cover; 
             background-position: center;
@@ -18,79 +19,169 @@
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px border rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar for observation table */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+        }
+        /* Fade out transition for HTMX deletion matching swap:400ms */
+        .htmx-swapping {
+            opacity: 0;
+            transition: opacity 400ms ease-out;
         }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen flex items-center justify-center p-4">
 
-    <div class="w-full max-w-md z-10">
-        
-        <div class="text-center mb-8">
+    <div class="w-full max-w-xl my-8"> <div class="text-center mb-6">
             <h1 class="text-2xl font-black tracking-wider text-white">
                 ASTRO<span class="text-indigo-400">DATA</span>PRO
             </h1>
             <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Deep Sky Observation Log</p>
         </div>
 
-        <section class="glass p-6 rounded-3xl border border-white/10 relative overflow-hidden shadow-2xl">
+        <section class="glass p-6 rounded-3xl border border-white/10 relative overflow-hidden shadow-2xl space-y-6">
             
             <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="flex flex-col items-center text-center border-b border-white/10 pb-6">
-                <div class="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-purple-500 rounded-full flex items-center justify-center p-1 shadow-lg shadow-indigo-500/20 mb-4">
+            <div class="flex flex-col items-center text-center border-b border-white/5 pb-5">
+                <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-500 rounded-full flex items-center justify-center p-[3px] shadow-lg shadow-indigo-500/10 mb-3">
                     <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center overflow-hidden">
-                        <span class="text-3xl font-bold text-indigo-400">U</span>
+                        <span class="text-2xl font-bold text-indigo-400">{{username[0]}}</span>
                     </div>
                 </div>
-                <h2 class="text-xl font-bold text-white tracking-wide">User_12345</h2>
-                <p class="text-sm text-indigo-400/80 font-medium">Stargazer / Observer</p>
+                <h2 class="text-xl font-bold text-white tracking-wide">{{username}}</h2>
+                <p class="text-xs text-indigo-400/80 font-medium tracking-wider uppercase mt-0.5">Stargazer / Observer</p>
             </div>
 
-            <div class="py-6 space-y-4">
-                <div>
-                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">Email Address</label>
-                    <div class="w-full bg-white/5 p-3.5 rounded-xl border border-white/10 text-slate-300 text-sm">
-                        user_12345@example.com
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">Member Since</label>
-                    <div class="w-full bg-white/5 p-3.5 rounded-xl border border-white/10 text-slate-300 text-sm">
-                        June 2026
-                    </div>
+            <div class="space-y-1">
+                <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">Member Since</label>
+                <div class="w-full bg-white/5 p-3 rounded-xl border border-white/5 text-slate-300 text-sm font-mono">
+                    {{created_at}}
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 border-t border-white/10 pt-6">
-                <div class="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
-                    <span class="block text-2xl font-bold text-indigo-400">42</span>
-                    <span class="text-xs font-medium text-slate-400">Total Logs</span>
+            <div class="grid grid-cols-3 gap-2.5">
+                <div class="bg-white/5 border border-white/5 p-3 rounded-xl text-center">
+                    <span class="block text-xl font-bold text-indigo-400">{{total_logs}}</span>
+                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-tight">Logs</span>
                 </div>
-                <div class="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
-                    <span class="block text-2xl font-bold text-purple-400">12</span>
-                    <span class="text-xs font-medium text-slate-400">Exoplanets</span>
+                <div class="bg-white/5 border border-white/5 p-3 rounded-xl text-center">
+                    <span class="block text-xl font-bold text-purple-400">{{total_exoplanets}}</span>
+                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-tight">Exoplanets</span>
+                </div>
+                <div class="bg-white/5 border border-white/5 p-3 rounded-xl text-center">
+                    <span class="block text-xl font-bold text-emerald-400">Active</span>
+                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-tight">Status</span>
                 </div>
             </div>
 
+            <div class="space-y-2">
+                <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">Your Observation Logs</label>
+                <div class="w-full bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                    <div class="max-h-60 overflow-y-auto custom-scroll">
+                        {% if logs %}
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-white/10 bg-white/5 text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 backdrop-blur-md z-10">
+                                        <th class="p-3">Target</th>
+                                        <th class="hidden md:table-cell p-3">RA</th>
+                                        <th class="hidden md:table-cell p-3">Dec</th>
+                                        <th class="p-3 text-right">Logged / Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    {% for log in logs %}
+                                        <tr id="profile-obs-{{ log.id }}" class="hover:bg-white/5 transition-colors duration-150">
+                                            <td class="p-3 font-semibold text-white">
+                                                <div class="flex flex-col">
+                                                    <span>{{ log.target_name }}</span>
+                                                    <span class="md:hidden font-mono text-[10px] text-slate-500 mt-1">
+                                                        {{ log.ra }} / {{ log.declination }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="hidden md:table-cell p-3 text-slate-400 font-mono text-xs">{{ log.ra }}</td>
+                                            <td class="hidden md:table-cell p-3 text-slate-400 font-mono text-xs">{{ log.declination }}</td>
+                                            <td class="p-3 text-right">
+                                                <div class="flex items-center justify-end gap-3">
+                                                    <span class="text-xs text-slate-500 font-mono">{{ log.created_at.split(' ')[0] if log.created_at else '' }}</span>
+                                                    
+                                                    <button type="button"
+                                                            hx-delete="/delete-target/{{ log.id }}"
+                                                            hx-target="#profile-obs-{{ log.id }}"
+                                                            hx-swap="outerHTML swap:400ms"
+                                                            hx-trigger="confirmed"
+                                                            hx-on:click="
+                                                                Swal.fire({
+                                                                    title: 'Confirm Deletion',
+                                                                    text: 'Remove {{ log.target_name | escape }} from logs?',
+                                                                    icon: 'warning',
+                                                                    showCancelButton: true,
+                                                                    confirmButtonColor: '#4f46e5', 
+                                                                    cancelButtonColor: '#1e293b', 
+                                                                    confirmButtonText: 'Delete',
+                                                                    background: '#0f172a',   
+                                                                    color: '#f1f5f9'
+                                                                }).then((result) => {
+                                                                    if (result.isConfirmed) {
+                                                                        htmx.trigger(this, 'confirmed');
+                                                                    }
+                                                                })
+                                                            "
+                                                            hx-on::after-request="
+                                                                if(event.detail.successful) {
+                                                                    Swal.fire({
+                                                                        title: 'Deleted!',
+                                                                        text: 'The target has been removed.',
+                                                                        icon: 'success',
+                                                                        timer: 1500,
+                                                                        showConfirmButton: false,
+                                                                        background: '#0f172a',   
+                                                                        color: '#f1f5f9'
+                                                                    });
+                                                                }
+                                                            "
+                                                            class="p-1.5 text-slate-600 hover:text-red-500 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="p-6 text-center text-xs text-slate-500 italic">
+                                No sky targets logged yet. Head to the dashboard to begin!
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+           
         </section>
 
         <div class="mt-4 glass p-1.5 rounded-2xl flex items-center justify-between text-center border border-white/10 shadow-lg">
-            <a href="/" class="flex-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 py-2.5 rounded-xl transition-all duration-200 drop-shadow-[0_0_8px_rgba(129,140,248,0.2)]">
+            <a href="/" class="flex-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 py-2.5 rounded-xl transition-all duration-200">
                 Go Back 
             </a>
-            
             <div class="w-[1px] h-4 bg-white/10"></div>
-            
             <a href="/settings" class="flex-1 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/5 py-2.5 rounded-xl transition-all duration-200">
                 Settings
             </a>
-            
             <div class="w-[1px] h-4 bg-white/10"></div>
-            
-            <a href="/logout" class="flex-1 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 py-2.5 rounded-xl transition-all duration-200 drop-shadow-[0_0_8px_rgba(244,63,94,0.1)]">
+            <a href="/logout" class="flex-1 text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 py-2.5 rounded-xl transition-all duration-200">
                 Logout
             </a>
         </div>

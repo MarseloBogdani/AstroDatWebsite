@@ -61,8 +61,8 @@ def add_target():
     if not name:
         return "Target name is required" , 400
   
-    if not(session.get('logged_in')):
-        return "You must be Logged Observer to log", 400
+    if not session.get('logged_in') or "user_id" not in session:
+        return "You must be a Logged Observer to log", 400
     
     try:
         new_entry = astro_service.add_observation_service(
@@ -164,12 +164,7 @@ def logout():
 def profile():
     this_id = session.get("user_id")
     if this_id:
-
-        page = int(request.args.get('page', 1))
-        per_page = 50
-        offset = page * per_page
-
-        logs = astro_service.search_users_recent_observations(user_id=this_id,limit=per_page,offset=offset)
+        logs = astro_service.search_users_recent_observations(user_id=this_id)
         total_logs = len(logs)
 
         total_exoplanets = astro_service.count_users_exoplanets(user_id=this_id)

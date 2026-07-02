@@ -81,22 +81,24 @@ class DatabaseManager:
         
     def add_user(self, username: str, hashed_password: str) -> Optional[User]:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        conn = self._get_connection()
         try:
-            with self._get_connection() as conn:
+
+            with conn:
                 cursor = conn.execute(
                     "INSERT INTO users (username, password, created_at) VALUES (?,?,?)",
-                    (username,hashed_password,timestamp)
+                    (username, hashed_password, timestamp)
                 )
-            new_id = cursor.lastrowid
-            conn.commit()
+                new_id = cursor.lastrowid
+            
             if new_id:
-                return User(new_id,username,hashed_password,timestamp)
-            else: 
-                return None
-        except sqlite3.IntegrityError as e:
-            raise UserAlreadyExistsError
-        except Exception as e:
-            print(e)  
+                return User(new_id, username, hashed_password, timestamp)
+            return None
+        except sqlite3.IntegrityError:
+            raise UserAlreadyExistsError()
+        finally:
+            conn.close()  
         
     def delete_user(self, target_id: int) -> bool:
         try:
@@ -116,9 +118,9 @@ class DatabaseManager:
                 return None
             return User.from_row(row)
             
-    def search_users_recent_observations(self, user_id: int, limit=50, offset=0) -> list[Observation]:
+    def search_users_recent_observations(self, user_id: int) -> list[Observation]:
         with self._get_connection() as conn:
-            cursor = conn.execute("SELECT * FROM observations WHERE id_user LIKE ? ORDER BY created_at DESC ", 
+            cursor = conn.execute("SELECT * FROM observations WHERE id_user = ? ORDER BY created_at DESC ", 
                                   (user_id,))
             return [Observation.from_row(row) for row in cursor.fetchall()]
         

@@ -34,9 +34,6 @@ def checked_username_password(username:str, password:str):
     if len(password) < 8:
         raise WrongUsernamePasswordFormat("password must be at least 8 characters long.")
     
-    forbidden_chars = ["'", '"', "^", "&", "-", "*", "<", ">", " "]
-    if any(char in password for char in forbidden_chars):
-        raise WrongUsernamePasswordFormat("password can't contain <>&^*-'" + '"')
     return True
     
 
@@ -46,7 +43,7 @@ class DatabaseRepo(Protocol):
     def add_observation(self, name: str, ra: str, dec: str, notes: Optional[str], user_id: int) -> Observation: ...
     def delete_observation(self, target_id: int) -> bool: ... 
     def search_observations(self, query: str, limit: int = 50, offset: int = 0) -> List[Observation]: ...
-    def search_users_recent_observations(self, user_id: int, limit: int = 50, offset: int = 0) -> List[Observation]: ...
+    def search_users_recent_observations(self, user_id: int) -> List[Observation]: ...
     def count_users_exoplanets(self,user_id: int) -> int: ...
     def add_user(self, username: str, hashed_password: str) -> Optional[User]: ...
     def delete_user(self, target_id: int) -> bool: ...
@@ -102,18 +99,14 @@ class AstroService:
                 
             return user
         
-    def search_users_recent_observations(self, user_id: int, limit=50, offset=0) -> list[Observation]:
+    def search_users_recent_observations(self, user_id: int) -> list[Observation]:
         try:
-            return self.db.search_users_recent_observations(user_id,limit,offset)
+            return self.db.search_users_recent_observations(user_id)
         except Exception as e:
-            print('debug')
-            print(e)
-            raise Exception()
+            raise DatabaseError("Failed to fetch user observations") from e
         
     def count_users_exoplanets(self,user_id: int) -> int:
         try:
             return self.db.count_users_exoplanets(user_id)
         except Exception as e:
-            print('debug')
-            print(e)
-            raise Exception()
+            raise DatabaseError("Failed to fetch user observations exoplanets") from e

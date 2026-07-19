@@ -57,21 +57,23 @@ flowchart TD
 
 ---
 
+## Performance Testing
+* Dataset Size: 100k records
+* Concurrent Users: 500
+* Failure Rate: 0%
+* RPS: 158.03
+* Average Response Time: 52 ms
+* Tool: Locust
+![Screenshot1](Screenshots/users_500.PNG)
+
+---
+
 ## UX & Data Flow
 * **Live Search:** On each keystroke (with debounce), HTMX sends a GET request to /search and updates the table dynamically
 * **Optimistic Updates:** Insert (`POST`) and delete (`DELETE`) operations update the DOM immediately using returned HTML fragments (`target_row.html`).
 * **Infinite Scroll:** Using `load_more_trigger.html` to automatically load data when the user reaches the end of the list.
 * **Real-time Validation:** `coords.js` enforces formatting for celestial coordinates (RA/Dec) during input.
 
----
-
-## Performance Testing
-* Dataset Size: 100k records
-* Concurrent Users: 500
-* Failure Rate: 0%
-* Average Response Time: 52 ms
-* Tool: Locust
-![Screenshot1](Screenshots/users_500.PNG)
 ---
 
 ## Bottlenecks
@@ -113,7 +115,7 @@ flowchart TD
 * **Tech Stack:** Flask + HTMX for lightweight, dynamic interactivity.
 * **Database:** Raw SQL with SQLite for performance control and learning.
 * **Logic & Data:** Service-layer validation and typed data models for robust data flow.
-* **UX/Performance:** HTMX-driven pagination for smooth scrolling; validated with Locust (100 users).
+* **UX/Performance:** HTMX-driven pagination for smooth scrolling; validated with Locust (500 users).
 * **Roadmap:** Planned transition to PostgreSQL, indexing, and * **SQLAlchemy connection pooling.
 * **Error Handling:** Structured, centralized exception management.
 

@@ -30,6 +30,10 @@ TEST_ACCOUNTS = [
     {"username": "test_user_64345", "password": "SecurePassword123!"},
     {"username": "test_user_76813", "password": "SecurePassword123!"},
     {"username": "test_user_58505", "password": "SecurePassword123!"},
+    {"username": "test_user_18565", "password": "SecurePassword123!"},
+    {"username": "test_user_26414", "password": "SecurePassword123!"},
+    {"username": "test_user_88980", "password": "SecurePassword123!"},
+    {"username": "test_user_92940", "password": "SecurePassword123!"},
 ]
 
 # Realistic astronomical catalog prefixes and object types (from seed_db.py)

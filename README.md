@@ -66,12 +66,12 @@ flowchart TD
 ---
 
 ## Performance Testing
-* Dataset Size: 70-80k records
-* Concurrent Users: 100
+* Dataset Size: 100k records
+* Concurrent Users: 500
 * Failure Rate: 0%
 * Average Response Time: 52 ms
 * Tool: Locust
-![Screenshot1](Screenshots/Locust_100_users.PNG)
+![Screenshot1](Screenshots/users_500.PNG)
 ---
 
 ## Bottlenecks
@@ -103,8 +103,8 @@ flowchart TD
    # Install dependencies
     pip install -r requirements.txt
 
-   # Run the application 
-    python app.py
+   # Run the application via waitress
+    waitress-serve --threads=32 --connection-limit=500 app:app  
 
    ```
 ---

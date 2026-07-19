@@ -6,8 +6,6 @@ from flask_bcrypt import Bcrypt
 from my_exceptions import *
 from datetime import timedelta
 
-os.environ["FLASK_ENV_TESTING"] = "TRUE"
-
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key")

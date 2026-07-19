@@ -24,6 +24,7 @@ class DatabaseManager:
                 ra TEXT NOT NULL,
                 declination TEXT NOT NULL,
                 notes TEXT,
+                likes_count INTEGER,
                 created_at TEXT
             )
         """
@@ -75,7 +76,7 @@ class DatabaseManager:
     def search_observations(self, query: str, limit=50, offset=0) -> list[Observation]:
         with self._get_connection() as conn:
             sql = "SELECT * FROM observations WHERE target_name LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
-            search_term = f"%{query}%"
+            search_term = f"{query}%"
             cursor = conn.execute(sql, (search_term, limit, offset))
             return [Observation.from_row(row) for row in cursor.fetchall()]
         
@@ -132,5 +133,40 @@ class DatabaseManager:
                 (user_id,)
             )
             return cursor.fetchone()[0]
+        
+    def add_like(self,observation_id: int) -> bool:
+
+        conn = self._get_connection()
+        try:
+            with conn:
+                cursor = conn.execute("UPDATE targets SET likes_count = likes_count + 1 WHERE id = ?", (observation_id,))
+                return True
+        except Exception as e:
+            raise Exception("Problem with adding like.Try again later")
+        finally:
+            conn.close()
+
+    def upvote_like(self,observation_id: int) -> bool:
+
+        conn = self._get_connection()
+        try:
+            with conn:
+                cursor = conn.execute("UPDATE targets SET likes_count = likes_count + 1 WHERE id = ?", (observation_id,))
+                return True
+        except Exception as e:
+            raise Exception("Problem with adding like.Try again later")
+        finally:
+            conn.close()
+
+    def downvote_like(self,observation_id: int) -> bool:
+        conn = self._get_connection()
+        try:
+            with conn:
+                cursor = conn.execute("UPDATE targets SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?", (observation_id,))
+                return True
+        except Exception as e:
+            raise Exception("Problem with adding like.Try again later")
+        finally:
+            conn.close()
         
             

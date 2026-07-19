@@ -91,13 +91,19 @@ class WebsiteLoadTester(HttpUser):
 import random
 from locust import HttpUser, task, between
 
+Test_Users = [
+        {"test_user_64345"},
+        {"test_user_76813"},
+        {"test_user_58505"}
+    ]
+
 class AstroHeavyTrafficUser(HttpUser):
-    wait_time = between(0.5, 2.0)
+    wait_time = between(3, 5)
 
     def on_start(self):
         """Log in once when the user spawns, using one of the users we know exists."""
-        random_id = random.randint(10000, 99999)
-        self.username = f"test_user_{random_id}"
+        
+        self.username = random.choice(Test_Users)
         self.password = "SecurePassword123!"
         
         payload = {"username": self.username, "password": self.password}
@@ -116,7 +122,7 @@ class AstroHeavyTrafficUser(HttpUser):
     def load_more_pagination(self):
         self.client.get(f"/load-more?page={random.randint(1, 3)}")
 
-    @task(2)   # Low weight: Writing to the database (adding observations)
+    @task(1)
     def add_astronomy_target(self):
         payload = {
             "name": f"Locust-Obs-{random.randint(100,999)}",

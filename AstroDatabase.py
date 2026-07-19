@@ -165,7 +165,7 @@ class DatabaseManager:
                 cursor = conn.execute("UPDATE targets SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?", (observation_id,))
                 return True
         except Exception as e:
-            raise Exception("Problem with adding like.Try again later")
+            raise Exception("Problem with downvoting.Try again later")
         finally:
             conn.close()
         

@@ -6,6 +6,8 @@ from flask_bcrypt import Bcrypt
 from my_exceptions import *
 from datetime import timedelta
 
+os.environ["FLASK_ENV_TESTING"] = "TRUE"
+
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key")
@@ -138,7 +140,7 @@ def login_process():
     
 
     if os.environ.get("FLASK_ENV_TESTING") == "TRUE":
-        if username in ["observer_one", "observer_two", "observer_three"]:
+        if username in ["test_user_64345","test_user_76813","test_user_58505"]:
             session['logged_in'] = True
             session['user_id'] = 1 
             return "OK", 200

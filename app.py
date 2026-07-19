@@ -233,6 +233,12 @@ def settings_saving_process():
     response = make_response("Saved", 200)
     response.headers['HX-Redirect'] = '/settings'
     return response
+
+@app.route("/like-target/<int:target_id>", methods=["POST"])
+def like_target(target_id):
+    return "", 200
+
+
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

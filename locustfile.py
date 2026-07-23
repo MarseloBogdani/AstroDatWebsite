@@ -11,7 +11,7 @@ Personas modeled:
 
 Run:
     locust -f locustfile.py --host http://localhost:5000
-    locust -f locustfile.py --host http://localhost:5000 --headless -u 200 -r 20 -t 5m
+    locust -f locustfile.py --host http://localhost:5000 --headless -u 500 -r 20 
 """
 
 import os
@@ -27,13 +27,13 @@ from locust import HttpUser, task, between, tag, events, SequentialTaskSet
 
 # Pre-seeded test accounts (must exist in the DB or FLASK_ENV_TESTING=TRUE)
 TEST_ACCOUNTS = [
-    {"username": "test_user_64345", "password": "SecurePassword123!"},
-    {"username": "test_user_76813", "password": "SecurePassword123!"},
-    {"username": "test_user_58505", "password": "SecurePassword123!"},
-    {"username": "test_user_18565", "password": "SecurePassword123!"},
-    {"username": "test_user_26414", "password": "SecurePassword123!"},
-    {"username": "test_user_88980", "password": "SecurePassword123!"},
-    {"username": "test_user_92940", "password": "SecurePassword123!"},
+    {"username": "test_user_64345", "password": "SecurePassword123"},
+    {"username": "test_user_76813", "password": "SecurePassword123"},
+    {"username": "test_user_58505", "password": "SecurePassword123"},
+    {"username": "test_user_18565", "password": "SecurePassword123"},
+    {"username": "test_user_26414", "password": "SecurePassword123"},
+    {"username": "test_user_88980", "password": "SecurePassword123"},
+    {"username": "test_user_92940", "password": "SecurePassword123"},
 ]
 
 # Realistic astronomical catalog prefixes and object types (from seed_db.py)
@@ -222,6 +222,7 @@ class AnonymousBrowser(HttpUser):
 
     @tag("write", "like")
     @task(3)
+    
     def attempt_like_anonymous(self):
         """Unauthenticated user tries to like target -> should redirect to login via HX-Redirect."""
         obs_id = random.randint(1, 1000)

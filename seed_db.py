@@ -1,11 +1,14 @@
 import random
 from AstroDatabase import DatabaseManager
 
+
 def seed_data(count=100):
     service = DatabaseManager()
+
     prefixes = ["Messier", "M", "NGC", "IC", "C", "Caldwell", "Herschel", "Sh2", "RCW", "Gum", "vdb",
     "Barnard", "B", "Abell", "Arp", "VV", "HCG", "UGC", "PGC", "MCG", "ESO", "Zwicky", 
     "CGCG", "Markarian", "Mrk", "VCC", "AM", "Arak", "KPG", "Kar", "DDO", "DW",]
+
     objects = [
     "Emission Nebula", "Reflection Nebula", "Dark Nebula", "Planetary Nebula", 
     "Supernova Remnant", "H II Region", "Molecular Cloud", "Herbig-Haro Object",
@@ -19,8 +22,10 @@ def seed_data(count=100):
     "Galaxy Group", "Supercluster", "Void", "Gravitational Lens",
 
     "Exoplanet", "Hot Jupiter", "Super-Earth", "Protoplanetary Disk", "Asteroid", 
-    "Comet", "Centaur", "Kuiper Belt Object", "Trans-Neptunian Object"
-]
+    "Comet", "Centaur", "Kuiper Belt Object", "Trans-Neptunian Object"]
+
+    LIKES = [0,10,25,100,521,421,543,765,980,35,68,12,54,78,45,99,1002,1200,4000,10000]
+
     print(f"Ξεκινάει η προσθήκη {count} εγγραφών...")
 
 
@@ -39,12 +44,13 @@ def seed_data(count=100):
         dec = f"{random.choice(['', '-'])}{random.randint(0, 89):02}° {random.randint(0, 59):02}' {random.randint(0,59):02}''"
         notes = random.choice(notes_list)
         user_id = 0
+        like = random.choice(LIKES)
         service.add_observation(name, ra, dec, notes, user_id)
         
-        if (i + 1) % 10 == 0:
+        if (i + 1) % 100 == 0:
             print(f"Προστέθηκαν {i + 1} εγγραφές...")
 
     print("Η σπορά δεδομένων ολοκληρώθηκε επιτυχώς!")
 
 if __name__ == "__main__":
-    seed_data(100000000)
+    seed_data(10000)

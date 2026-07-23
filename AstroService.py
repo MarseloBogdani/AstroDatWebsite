@@ -131,8 +131,11 @@ class AstroService:
         
     def flush_database_service(self,user_id,pending_likes):
         for obs_id,like in pending_likes.items():
-                x = self.db.addlike(user_id,obs_id)
-                print(f"obs with id: {obs_id} got {like} from session and {x} from db")
+                if like != 0:
+                    x = self.db.addlike(user_id,obs_id)
+                    print(f"** obs with id: {obs_id} got {like} from session and {x} from db **")
+                else:
+                    print("** got 0 **")
             
             
 

@@ -5,6 +5,7 @@
         hx-post="/like-target/{{ target.id }}"
         hx-vals='{"current_count": {{ target.likes_count }}}'
         hx-target="this"
+        hx-disabled-elt="this"
         hx-swap="outerHTML"
         class="cursor-pointer flex items-center gap-1.5 p-2 {% if is_liked %}text-red-600{% else %}text-slate-500 hover:text-red-600{% endif %} transition-colors group/like active:scale-95"
         onclick="event.stopPropagation()">

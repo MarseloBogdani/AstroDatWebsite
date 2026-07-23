@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, request, make_response, session,redirect, url_for
+from flask_login import login_required
 from AstroDatabase import DatabaseManager
 from AstroService import AstroService
 from flask_bcrypt import Bcrypt
@@ -52,6 +53,13 @@ def compact_number(n):
 
 @app.route("/")
 def index():
+    if session.get("logged_in"):
+        user_id = session.get("user_id")
+        pending = {str(k) :int(v) for k,v in session.get("pending_changes", {}).items()}
+        astro_service.flush_database_service(user_id, pending)
+        session["pending_changes"] = {}
+        session["user_likes"] = list(astro_service.get_user_likes_service(user_id)) 
+        
     data = astro_service.get_recent_observations_service(limit=50)
     total = astro_service.get_total_count_service() 
     return render_template("dashboard.html", targets=data, total_count=total)
@@ -154,6 +162,9 @@ def login_process():
         session["created_at"] = user.created_at
         session['logged_in'] = True
 
+        session["user_likes"] = list(astro_service.get_user_likes_service(user.id)) 
+        session["pending_changes"] = {}
+
         response = make_response("", 200)
         response.headers['HX-Redirect'] = '/'
         return response
@@ -165,6 +176,11 @@ def login_process():
 
 @app.route("/logout")  
 def logout():
+    user_id = session.get("user_id")
+    pending = {str(k) :int(v) for k,v in session.get("pending_changes", {}).items()}
+    astro_service.flush_database_service(user_id, pending)
+    session["pending_changes"] = {}
+    session["user_likes"] = list(astro_service.get_user_likes_service(user_id)) 
     session.clear() 
     return redirect("/")
     
@@ -234,11 +250,40 @@ def settings_saving_process():
     response.headers['HX-Redirect'] = '/settings'
     return response
 
-@app.route("/like-target/<int:target_id>", methods=["POST"])
-def like_target(target_id):
-    return "", 200
+@app.route("/like-target/<int:obs_id>", methods=["POST"])
+def like_target(obs_id): 
+    obs_id = str(obs_id)
+    if session.get("logged_in"):
+        user_likes = set(str(x) for x in session.get("user_likes", []))
+        pending = {str(k): int(v) for k, v in session.get("pending_changes", {}).items()}
 
+        if obs_id in user_likes:
+            user_likes.remove(obs_id)
+            pending[obs_id] = pending.get(obs_id, 0) - 1
+            is_liked = False
+        else:
+            user_likes.add(obs_id) 
+            pending[obs_id] = pending.get(obs_id, 0) + 1
+            is_liked = True
 
+        session["user_likes"] = list(user_likes)
+        session["pending_changes"] = pending
+
+        current_count = int(request.form.get("current_count", 0))
+        new_count = current_count + (1 if is_liked else -1)
+
+        target_data = {
+            "id": obs_id,
+            "is_liked_by_user": is_liked,
+            "likes_count": new_count
+        }
+        
+        return render_template("partials/_like_button.html", target=target_data)
+    else:
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = url_for("login")
+        return response
     
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0",debug=True, port=5000)

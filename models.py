@@ -9,6 +9,7 @@ class Observation:
     ra: str
     declination: str
     notes: str
+    likes_count: int
     created_at: str
     
 
@@ -21,6 +22,7 @@ class Observation:
             ra=row['ra'],
             declination=row['declination'],
             notes=row['notes'],
+            likes_count=row['likes_count'],
             created_at=row['created_at']
         )
     

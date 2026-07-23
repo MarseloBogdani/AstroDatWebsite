@@ -48,6 +48,10 @@ class DatabaseRepo(Protocol):
     def add_user(self, username: str, hashed_password: str) -> Optional[User]: ...
     def delete_user(self, target_id: int) -> bool: ...
     def get_user(self, username: str) -> Optional[User]: ...
+    def addlike(self,user_id,obs_id) -> bool: ...
+    def get_user_likes(self,user_id) -> set[int]: ...
+    def get_observation_likes(self,obs_id) -> int: ...
+
 
 class AstroService:
     def __init__(self, astro_database: DatabaseRepo,bcrypt_instance) -> None:
@@ -110,3 +114,26 @@ class AstroService:
             return self.db.count_users_exoplanets(user_id)
         except Exception as e:
             raise DatabaseError("Failed to fetch user observations exoplanets") from e
+
+    def get_user_likes_service(self,user_id) -> set[int]:
+        try:
+            return self.db.get_user_likes(user_id)
+        except:
+            raise Exception("an unexpected exception happened.")
+    
+    def get_observation_likes_service(self,obs_id) -> int:
+
+        likes = self.db.get_observation_likes(obs_id)
+        if likes == -1:
+            raise WrongId("This observation was not found!")
+        else:
+            return likes
+        
+    def flush_database_service(self,user_id,pending_likes):
+        for obs_id,like in pending_likes.items():
+                x = self.db.addlike(user_id,obs_id)
+                print(f"obs with id: {obs_id} got {like} from session and {x} from db")
+            
+            
+
+        

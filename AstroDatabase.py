@@ -24,10 +24,10 @@ class DatabaseManager:
                 ra TEXT NOT NULL,
                 declination TEXT NOT NULL,
                 notes TEXT,
-                likes_count INTEGER,
+                likes_count INTEGER DEFAULT 0,
                 created_at TEXT
-            )
-        """
+            
+        )"""
         query2 = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,9 +36,20 @@ class DatabaseManager:
                 created_at TEXT NOT NULL
         )"""
 
+        query3 = """
+            CREATE TABLE IF NOT EXISTS likes (
+            user_id INTEGER NOT NULL,
+            observation_id INTEGER NOT NULL,
+            PRIMARY KEY (user_id,observation_id),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (observation_id) REFERENCES observations(id)
+            
+        )"""
+
         with self._get_connection() as conn:
             conn.execute(query1)
             conn.execute(query2)
+            conn.execute(query3)
 
     def get_recent_observations(self, limit=50, offset=0):
         with self._get_connection() as conn:
@@ -57,12 +68,12 @@ class DatabaseManager:
             cursor = conn.execute(
                 "INSERT INTO observations (id_user,target_name,ra,declination,notes,created_at) VALUES (?,?,?,?,?,?)",
                 (user_id,name, ra, dec, notes, timestamp)
-            )
+            ) 
             new_id = cursor.lastrowid
             if new_id is None:
                 raise DatabaseError("Failed to retrieve new observation id")
             conn.commit()
-            return Observation(new_id, user_id, name, ra, dec, notes, timestamp)
+            return Observation(new_id, user_id, name, ra, dec, notes, 0,timestamp) # 0 is for 0 likes
 
     def delete_observation(self, target_id: int) -> bool:
         try:
@@ -134,39 +145,37 @@ class DatabaseManager:
             )
             return cursor.fetchone()[0]
         
-    def add_like(self,observation_id: int) -> bool:
+    def addlike(self,user_id,obs_id):
+            try:
+                with self._get_connection() as conn:
+                    query = "INSERT INTO likes (user_id,observation_id) VALUES (?,?)"
+                    conn.execute(query, (user_id,obs_id))
 
-        conn = self._get_connection()
-        try:
-            with conn:
-                cursor = conn.execute("UPDATE targets SET likes_count = likes_count + 1 WHERE id = ?", (observation_id,))
-                return True
-        except Exception as e:
-            raise Exception("Problem with adding like.Try again later")
-        finally:
-            conn.close()
+                    query2 = "UPDATE observations SET likes_count = likes_count + 1 WHERE id = ?"
+                    conn.execute(query2, (obs_id,))
 
-    def upvote_like(self,observation_id: int) -> bool:
+                    return True
+            except sqlite3.IntegrityError as e:
+                with self._get_connection() as conn:
+                    query = "DELETE FROM likes WHERE user_id = ? AND observation_id = ?"
+                    conn.execute(query, (user_id,obs_id))
 
-        conn = self._get_connection()
-        try:
-            with conn:
-                cursor = conn.execute("UPDATE targets SET likes_count = likes_count + 1 WHERE id = ?", (observation_id,))
-                return True
-        except Exception as e:
-            raise Exception("Problem with adding like.Try again later")
-        finally:
-            conn.close()
+                    query2 = "UPDATE observations SET likes_count = MAX(0, likes_count - 1) WHERE id = ?"
+                    conn.execute(query2, (obs_id,))
 
-    def downvote_like(self,observation_id: int) -> bool:
-        conn = self._get_connection()
-        try:
-            with conn:
-                cursor = conn.execute("UPDATE targets SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?", (observation_id,))
-                return True
-        except Exception as e:
-            raise Exception("Problem with downvoting.Try again later")
-        finally:
-            conn.close()
+                    return False
+
+    def get_user_likes(self,user_id):
+        with self._get_connection() as conn:
+            query = "SELECT observation_id FROM likes WHERE user_id = ?"
+            cursor = conn.execute(query, (user_id,))
+            return {row["observation_id"] for row in cursor.fetchall()}
+
+    def get_observation_likes(self,obs_id):
+        with self._get_connection() as conn:
+            query = "SELECT likes_count FROM observations WHERE id = ?"
+            cursor = conn.execute(query, (obs_id,))
+            row = cursor.fetchone()
+            return row["likes_count"] if row else -1
         
             

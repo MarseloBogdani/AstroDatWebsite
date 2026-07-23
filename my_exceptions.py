@@ -9,3 +9,5 @@ class WrongUsernamePasswordFormat(Exception): pass
 class InvalidUsernameError(Exception): pass
 
 class DatabaseError(Exception): pass
+
+class WrongId(Exception): pass

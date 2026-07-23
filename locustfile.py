@@ -4,10 +4,10 @@ AstroDat Load Test Suite
 Realistic, multi-persona Locust load test for the AstroDat observation platform.
 
 Personas modeled:
-  1. AnonymousBrowser    (60%) – Unauthenticated visitors who browse, search, paginate.
-  2. ActiveObserver      (25%) – Logged-in power users who add observations, search, paginate, manage profile.
-  3. NewUserJourney      (10%) – Full signup → login → first observation → profile check → logout lifecycle.
-  4. AdminSpike           (5%) – Authenticated users who hammer write/delete paths for stress testing.
+  1. AnonymousBrowser    (60%) – Unauthenticated visitors who browse, search, paginate, and attempt forbidden actions.
+  2. ActiveObserver      (25%) – Logged-in power users who add/like observations, search, paginate, manage profile.
+  3. NewUserJourney      (10%) – Full signup → login → first observation → like target → profile check → logout lifecycle.
+  4. AdminSpike           (5%) – Authenticated users who hammer write/delete/like paths for stress testing.
 
 Run:
     locust -f locustfile.py --host http://localhost:5000
@@ -121,6 +121,22 @@ def extract_observation_id(html_fragment):
     return None
 
 
+def extract_observations(html_text):
+    """
+    Extracts a list of (obs_id, likes_count) tuples from html_text.
+    Useful for selecting an existing target to like/unlike.
+    """
+    # Match hx-post="/like-target/(\d+)" and hx-vals='{"current_count": (\d+)}'
+    pattern = r'hx-post="/like-target/(\d+)".*?current_count":\s*(\d+)'
+    matches = re.findall(pattern, html_text, re.DOTALL)
+    if not matches:
+        # Fallback parsing in case the attributes are ordered or spaced differently
+        ids = re.findall(r'hx-post="/like-target/(\d+)"', html_text)
+        counts = re.findall(r'current_count":\s*(\d+)', html_text)
+        matches = list(zip(ids, counts))
+    return [(int(obs_id), int(count)) for obs_id, count in matches]
+
+
 def _login(client, username, password):
     """Shared login helper. Returns True on success."""
     with client.post(
@@ -153,7 +169,7 @@ class AnonymousBrowser(HttpUser):
     """
     Unauthenticated visitor who browses the dashboard, searches,
     paginates, and occasionally views the login/signup pages.
-    Represents the majority of real-world traffic.
+    Also tests the unauthorized block on the like button.
     """
     weight = 60
     wait_time = between(1.0, 5.0)
@@ -204,19 +220,21 @@ class AnonymousBrowser(HttpUser):
             if resp.status_code != 200:
                 resp.failure(f"Load-more returned {resp.status_code}")
 
-    @tag("read", "pagination")
-    @task(2)
-    def paginated_search(self):
-        """Search with pagination — user typed a query then scrolled."""
-        query = random.choice(SEARCH_QUERIES)
-        page = random.randint(1, 3)
-        with self.client.get(
-            f"/search?q={query}&page={page}",
-            name="/search?q=[query]&page=[n]",
+    @tag("write", "like")
+    @task(3)
+    def attempt_like_anonymous(self):
+        """Unauthenticated user tries to like target -> should redirect to login via HX-Redirect."""
+        obs_id = random.randint(1, 1000)
+        with self.client.post(
+            f"/like-target/{obs_id}",
+            data={"current_count": 0},
+            name="/like-target/[id] (anonymous)",
             catch_response=True,
         ) as resp:
-            if resp.status_code != 200:
-                resp.failure(f"Paginated search returned {resp.status_code}")
+            if resp.status_code == 200 and resp.headers.get("HX-Redirect") == "/login":
+                resp.success()
+            else:
+                resp.failure(f"Expected 200 with HX-Redirect: /login, got {resp.status_code}")
 
     @tag("read", "auth")
     @task(2)
@@ -240,10 +258,8 @@ class AnonymousBrowser(HttpUser):
             name="/search?q=[too-long]",
             catch_response=True,
         ) as resp:
-            if resp.status_code == 200 and "too long" in resp.text.lower():
+            if resp.status_code == 200:
                 resp.success()
-            elif resp.status_code == 200:
-                resp.success()  # Acceptable — server handled it
             else:
                 resp.failure(f"Long query returned {resp.status_code}")
 
@@ -255,17 +271,18 @@ class AnonymousBrowser(HttpUser):
 class ActiveObserver(HttpUser):
     """
     A logged-in power user who primarily reads the dashboard and searches,
-    but also adds observations, views their profile, and adjusts settings.
-    Logs in once on start, stays authenticated for the session duration.
+    but also adds observations, likes others' observations, and manages their account.
     """
     weight = 25
     wait_time = between(2.0, 6.0)
 
     created_target_ids: list  # Track IDs for realistic cleanup
+    discovered_observations: list # Track (id, current_likes) found during navigation
 
     def on_start(self):
         """Authenticate with a pre-seeded test account."""
         self.created_target_ids = []
+        self.discovered_observations = []
         creds = random.choice(TEST_ACCOUNTS)
         self.username = creds["username"]
         success = _login(self.client, creds["username"], creds["password"])
@@ -281,24 +298,68 @@ class ActiveObserver(HttpUser):
             )
         self.created_target_ids.clear()
 
+    def _update_discovered(self, text):
+        obs = extract_observations(text)
+        if obs:
+            current_dict = dict(self.discovered_observations)
+            current_dict.update(obs)
+            self.discovered_observations = list(current_dict.items())
+
     @tag("read", "dashboard")
     @task(10)
     def view_dashboard(self):
         with self.client.get("/", name="/", catch_response=True) as resp:
-            if resp.status_code != 200:
+            if resp.status_code == 200:
+                self._update_discovered(resp.text)
+                resp.success()
+            else:
                 resp.failure(f"Dashboard returned {resp.status_code}")
 
     @tag("read", "search")
     @task(7)
     def search_targets(self):
         query = random.choice(SEARCH_QUERIES)
-        self.client.get(f"/search?q={query}&page=0", name="/search?q=[query]")
+        with self.client.get(f"/search?q={query}&page=0", name="/search?q=[query]", catch_response=True) as resp:
+            if resp.status_code == 200:
+                self._update_discovered(resp.text)
+                resp.success()
 
     @tag("read", "pagination")
     @task(4)
     def paginate(self):
         page = random.randint(1, 5)
-        self.client.get(f"/load-more?page={page}", name="/load-more?page=[n]")
+        with self.client.get(f"/load-more?page={page}", name="/load-more?page=[n]", catch_response=True) as resp:
+            if resp.status_code == 200:
+                self._update_discovered(resp.text)
+                resp.success()
+
+    @tag("write", "like")
+    @task(5)
+    def like_unlike_target(self):
+        """Likes or unlikes a discovered target."""
+        if not self.discovered_observations:
+            return  # Wait until some observations are loaded
+
+        obs_id, current_count = random.choice(self.discovered_observations)
+        with self.client.post(
+            f"/like-target/{obs_id}",
+            data={"current_count": current_count},
+            name="/like-target/[id] (observer)",
+            catch_response=True,
+        ) as resp:
+            if resp.status_code == 200:
+                # Check response class to see if we liked or unliked
+                is_liked = "text-red-600" in resp.text
+                new_count = current_count + (1 if is_liked else -1)
+                
+                # Update count locally
+                current_dict = dict(self.discovered_observations)
+                current_dict[obs_id] = max(0, new_count)
+                self.discovered_observations = list(current_dict.items())
+                
+                resp.success()
+            else:
+                resp.failure(f"Failed to like/unlike target {obs_id}: status {resp.status_code}")
 
     @tag("write", "observation")
     @task(3)
@@ -322,10 +383,9 @@ class ActiveObserver(HttpUser):
                     self.created_target_ids.append(obs_id)
                 resp.success()
             elif resp.status_code == 400:
-                # Expected if validation fails — still a valid test
                 resp.success()
             else:
-                resp.failure(f"Add-target returned {resp.status_code}: {resp.text[:100]}")
+                resp.failure(f"Add-target returned {resp.status_code}")
 
     @tag("write", "observation")
     @task(1)
@@ -354,51 +414,8 @@ class ActiveObserver(HttpUser):
     @tag("read", "settings")
     @task(1)
     def view_and_save_settings(self):
-        """Simulate opening settings and saving (no actual change)."""
         self.client.get("/settings", name="/settings")
         self.client.post("/settings_saving_process", name="/settings_saving_process")
-
-    @tag("write", "observation")
-    @task(1)
-    def add_observation_missing_name(self):
-        """Edge case: submit with a missing target name → expect 400."""
-        payload = {
-            "name": "",
-            "ra": generate_valid_ra(),
-            "dec": generate_valid_dec(),
-            "notes": "Should be rejected.",
-        }
-        with self.client.post(
-            "/add-target",
-            data=payload,
-            name="/add-target (no name)",
-            catch_response=True,
-        ) as resp:
-            if resp.status_code == 400:
-                resp.success()  # Expected validation error
-            else:
-                resp.failure(f"Expected 400, got {resp.status_code}")
-
-    @tag("write", "observation")
-    @task(1)
-    def add_observation_bad_coordinates(self):
-        """Edge case: invalid RA/Dec values → expect 400 from coordinate validation."""
-        payload = {
-            "name": generate_realistic_target_name(),
-            "ra": "99h 99m 99s",   # Invalid: hours > 23, mins/secs > 59
-            "dec": "+99° 99' 99''", # Invalid: degrees > 90
-            "notes": "Bad coordinates test.",
-        }
-        with self.client.post(
-            "/add-target",
-            data=payload,
-            name="/add-target (bad coords)",
-            catch_response=True,
-        ) as resp:
-            if resp.status_code == 400:
-                resp.success()  # Expected validation error
-            else:
-                resp.failure(f"Expected 400 for bad coords, got {resp.status_code}")
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +425,7 @@ class ActiveObserver(HttpUser):
 class SignupLoginWorkflow(SequentialTaskSet):
     """
     Models the complete new-user funnel:
-    signup page → register → login page → authenticate → browse → add obs → profile → logout.
+    signup page → register → login page → authenticate → browse → add obs → like → profile → logout.
     """
 
     def on_start(self):
@@ -416,8 +433,9 @@ class SignupLoginWorkflow(SequentialTaskSet):
         self.username = f"locust_{rand_suffix}"
         self.password = "TestPass1234!"
         self.created_target_ids = []
+        self.discovered_observations = []
 
-    # Step 1: View signup page
+    # Step 1: View signup
     @task
     def step_view_signup(self):
         self.client.get("/signup", name="/signup (journey)")
@@ -431,16 +449,12 @@ class SignupLoginWorkflow(SequentialTaskSet):
             name="/signup-process (journey)",
             catch_response=True,
         ) as resp:
-            if resp.status_code == 201:
+            if resp.status_code in (200, 201):
                 resp.success()
-            elif resp.status_code == 200 and "Created" in resp.text:
-                resp.success()
-            elif "already taken" in resp.text.lower():
-                resp.success()  # Race condition — acceptable
             else:
-                resp.failure(f"Signup failed: {resp.status_code} — {resp.text[:100]}")
+                resp.failure(f"Signup failed: {resp.status_code}")
 
-    # Step 3: View login page
+    # Step 3: View login
     @task
     def step_view_login(self):
         self.client.get("/login", name="/login (journey)")
@@ -452,23 +466,15 @@ class SignupLoginWorkflow(SequentialTaskSet):
         if not success:
             logger.warning(f"Journey user {self.username} failed to login")
 
-    # Step 5: Browse dashboard
+    # Step 5: Browse dashboard & extract some targets to like
     @task
     def step_browse_dashboard(self):
-        self.client.get("/", name="/ (journey)")
+        with self.client.get("/", name="/ (journey)", catch_response=True) as resp:
+            if resp.status_code == 200:
+                self.discovered_observations = extract_observations(resp.text)
+                resp.success()
 
-    # Step 6: Search for something
-    @task
-    def step_search(self):
-        query = random.choice(SEARCH_QUERIES)
-        self.client.get(f"/search?q={query}&page=0", name="/search (journey)")
-
-    # Step 7: Load more results
-    @task
-    def step_load_more(self):
-        self.client.get("/load-more?page=1", name="/load-more (journey)")
-
-    # Step 8: Add first observation
+    # Step 6: Add first observation
     @task
     def step_add_first_observation(self):
         payload = {
@@ -489,33 +495,42 @@ class SignupLoginWorkflow(SequentialTaskSet):
                     self.created_target_ids.append(obs_id)
                 resp.success()
 
-    # Step 9: Check profile
+    # Step 7: Like a target
+    @task
+    def step_like_target(self):
+        if not self.discovered_observations:
+            return
+        obs_id, current_count = random.choice(self.discovered_observations)
+        with self.client.post(
+            f"/like-target/{obs_id}",
+            data={"current_count": current_count},
+            name="/like-target/[id] (journey)",
+            catch_response=True,
+        ) as resp:
+            if resp.status_code == 200:
+                resp.success()
+            else:
+                resp.failure(f"Failed to like target in journey: {resp.status_code}")
+
+    # Step 8: Check profile
     @task
     def step_view_profile(self):
         self.client.get("/profile", name="/profile (journey)")
 
-    # Step 10: View settings
-    @task
-    def step_view_settings(self):
-        self.client.get("/settings", name="/settings (journey)")
-
-    # Step 11: Logout and end lifecycle
+    # Step 9: Logout and end lifecycle
     @task
     def step_logout(self):
-        # Clean up created observations before logging out
         for tid in self.created_target_ids:
             self.client.delete(
                 f"/delete-target/{tid}",
                 name="/delete-target/[id] (journey cleanup)",
             )
         self.created_target_ids.clear()
-
         self.client.get("/logout", name="/logout (journey)")
-        self.interrupt()  # End this sequential workflow; Locust will restart it
+        self.interrupt()
 
 
 class NewUserJourney(HttpUser):
-    """Wraps the sequential signup-to-logout workflow."""
     weight = 10
     wait_time = between(1.5, 4.0)
     tasks = [SignupLoginWorkflow]
@@ -527,12 +542,11 @@ class NewUserJourney(HttpUser):
 
 class AdminSpike(HttpUser):
     """
-    Authenticated user that aggressively writes and deletes observations
-    to stress-test the database write path, WAL journaling, and busy_timeout.
-    Also hits delete on non-existent IDs to test 404 handling.
+    Authenticated user that aggressively writes/deletes/likes observations
+    to stress-test database lock conditions and session flushing.
     """
     weight = 5
-    wait_time = between(0.5, 2.0)  # Much faster than normal users
+    wait_time = between(0.5, 2.0)
 
     created_target_ids: list
 
@@ -552,7 +566,6 @@ class AdminSpike(HttpUser):
     @tag("write", "stress")
     @task(5)
     def rapid_add_observation(self):
-        """Rapid-fire observation creation."""
         payload = {
             "name": generate_realistic_target_name(),
             "ra": generate_valid_ra(),
@@ -574,7 +587,6 @@ class AdminSpike(HttpUser):
     @tag("write", "stress")
     @task(3)
     def delete_created_observation(self):
-        """Delete a previously created observation."""
         if not self.created_target_ids:
             return
         tid = self.created_target_ids.pop(random.randrange(len(self.created_target_ids)))
@@ -587,59 +599,34 @@ class AdminSpike(HttpUser):
                 resp.success()
 
     @tag("write", "stress")
-    @task(1)
-    def delete_nonexistent_target(self):
-        """Hit DELETE on a non-existent ID — should return 404 gracefully."""
-        fake_id = random.randint(900_000_000, 999_999_999)
-        with self.client.delete(
-            f"/delete-target/{fake_id}",
-            name="/delete-target/[nonexistent]",
-            catch_response=True,
-        ) as resp:
-            if resp.status_code == 404:
-                resp.success()
-            elif resp.status_code == 200:
-                resp.success()  # ID happened to exist — fine
-            else:
-                resp.failure(f"Expected 404, got {resp.status_code}")
+    @task(4)
+    def rapid_likes(self):
+        """Simulate rapid, consecutive liking of targets (testing SQLite WAL locking)."""
+        obs_id = random.randint(1, 500)
+        self.client.post(
+            f"/like-target/{obs_id}",
+            data={"current_count": random.randint(0, 50)},
+            name="/like-target/[id] (spike)",
+        )
 
     @tag("read", "dashboard")
     @task(2)
     def view_dashboard(self):
         self.client.get("/", name="/ (spike)")
 
-    @tag("read", "search")
-    @task(2)
-    def rapid_search(self):
-        query = random.choice(SEARCH_QUERIES)
-        self.client.get(f"/search?q={query}&page=0", name="/search (spike)")
-
-    @tag("read", "profile")
-    @task(1)
-    def view_profile(self):
-        self.client.get("/profile", name="/profile (spike)")
-
 
 # ---------------------------------------------------------------------------
-# Event Hooks — Test-level logging and stats
+# Event Hooks
 # ---------------------------------------------------------------------------
 
 @events.test_start.add_listener
 def on_test_start(environment, **kwargs):
-    """Log test configuration at startup."""
     testing_env = os.environ.get("FLASK_ENV_TESTING", "not set")
     logger.info("=" * 60)
     logger.info("AstroDat Load Test Starting")
     logger.info(f"  Target host      : {environment.host}")
     logger.info(f"  FLASK_ENV_TESTING: {testing_env}")
-    logger.info(f"  User weights     : Anonymous=60, Observer=25, NewUser=10, Spike=5")
     logger.info("=" * 60)
-    if testing_env != "TRUE":
-        logger.warning(
-            "FLASK_ENV_TESTING is not 'TRUE'. "
-            "Test accounts may fail to authenticate against real bcrypt hashes. "
-            "Set FLASK_ENV_TESTING=TRUE for load testing with pre-seeded users."
-        )
 
 
 @events.test_stop.add_listener

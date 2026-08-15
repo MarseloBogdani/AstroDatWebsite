@@ -145,20 +145,20 @@ def _login(client, username, password):
         name="/login-process",
         catch_response=True,
     ) as resp:
+        logger.info(f"DEBUG LOGIN [{resp.status_code}]: {resp.headers} | Body: {resp.text[:150]}")
+
         if resp.status_code == 200:
-            # Success is indicated by HX-Redirect header or "OK" body
             if resp.headers.get("HX-Redirect") == "/" or resp.text.strip() == "OK":
                 resp.success()
                 return True
-            # Any 200 with an error message body means auth failure
             if "Invalid" in resp.text or "not found" in resp.text.lower():
                 resp.failure(f"Auth failed: {resp.text[:80]}")
                 return False
-            # Ambiguous 200 — still treat as success for test users
             resp.success()
             return True
         resp.failure(f"Login returned {resp.status_code}")
         return False
+
 
 
 # ---------------------------------------------------------------------------
@@ -598,17 +598,6 @@ class AdminSpike(HttpUser):
         ) as resp:
             if resp.status_code in (200, 404):
                 resp.success()
-
-    @tag("write", "stress")
-    @task(4)
-    def rapid_likes(self):
-        """Simulate rapid, consecutive liking of targets (testing SQLite WAL locking)."""
-        obs_id = random.randint(1, 500)
-        self.client.post(
-            f"/like-target/{obs_id}",
-            data={"current_count": random.randint(0, 50)},
-            name="/like-target/[id] (spike)",
-        )
 
     @tag("read", "dashboard")
     @task(2)

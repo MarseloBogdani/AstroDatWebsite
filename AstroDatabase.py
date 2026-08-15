@@ -75,10 +75,13 @@ class DatabaseManager:
             conn.commit()
             return Observation(new_id, user_id, name, ra, dec, notes, 0,timestamp) # 0 is for 0 likes
 
-    def delete_observation(self, target_id: int) -> bool:
+    def delete_observation(self, target_id: int, user_id: int) -> bool:
         try:
             with self._get_connection() as conn:
-                cursor = conn.execute("DELETE FROM observations WHERE id = ?", (target_id,))
+                cursor = conn.execute(
+                    "DELETE FROM observations WHERE id = ? AND id_user = ?", 
+                    (target_id, user_id)
+                )
                 conn.commit()
                 return cursor.rowcount > 0
         except sqlite3.Error:
@@ -87,7 +90,7 @@ class DatabaseManager:
     def search_observations(self, query: str, limit=50, offset=0) -> list[Observation]:
         with self._get_connection() as conn:
             sql = "SELECT * FROM observations WHERE target_name LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
-            search_term = f"{query}%"
+            search_term = f"%{query}%"
             cursor = conn.execute(sql, (search_term, limit, offset))
             return [Observation.from_row(row) for row in cursor.fetchall()]
         
@@ -178,4 +181,3 @@ class DatabaseManager:
             row = cursor.fetchone()
             return row["likes_count"] if row else -1
         
-            

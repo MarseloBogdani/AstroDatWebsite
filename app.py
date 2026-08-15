@@ -85,11 +85,18 @@ def add_target():
     except (ValueError, DatabaseError) as e:
         return str(e), 400
     
+
 @app.route("/delete-target/<int:target_id>", methods=["DELETE"])
 def delete_target(target_id):
-    success = astro_service.delete_observation_service(target_id)
+    if not session.get('logged_in') or "user_id" not in session:
+        return {"error": "Unauthorized. You must be logged in."}, 401
+        
+    user_id = session["user_id"]
+    
+    success = astro_service.delete_observation_service(target_id, user_id)
     if not success:
-        return {"error": "Target not found or could not be deleted"}, 404
+        return {"error": "Target not found or you do not have permission to delete it"}, 403
+        
     return "", 200
 
 @app.route("/load-more")
@@ -286,4 +293,4 @@ def like_target(obs_id):
     
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", debug=True ,port=5000)

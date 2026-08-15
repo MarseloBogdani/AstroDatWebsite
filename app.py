@@ -112,7 +112,6 @@ def delete_target(target_id):
         return {"error": "Unauthorized. You must be logged in."}, 401
         
     user_id = session["user_id"]
-    
     success = astro_service.delete_observation_service(target_id, user_id)
     if not success:
         return {"error": "Target not found or you do not have permission to delete it"}, 403

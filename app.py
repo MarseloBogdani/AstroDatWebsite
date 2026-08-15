@@ -1,23 +1,43 @@
 import os
+import sys
 from flask import Flask, render_template, request, make_response, session,redirect, url_for
 from flask_login import login_required
 from AstroDatabase import DatabaseManager
 from AstroService import AstroService
 from flask_bcrypt import Bcrypt
+from flask_wtf.csrf import CSRFProtect
 from my_exceptions import *
 from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key")
+# -----------------
+#Must be set
+secret_key = os.environ.get("FLASK_SECRET_KEY")
+if not secret_key:
+    if os.environ.get("FLASK_ENV") == "development":
+        print("WARNING: Running with development session key. DO NOT USE IN PRODUCTION.")
+        secret_key = "dev-only-insecure-key-change-me"
+    else:
+        print("CRITICAL ERROR: FLASK_SECRET_KEY environment variable is not set. Terminating.")
+        sys.exit(1)
+app.secret_key = secret_key
+# ------------------
+
 app.permanent_session_lifetime = timedelta(minutes=60)
+
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "astro_dat.db")
 
 bcrypt = Bcrypt(app)
+csrf = CSRFProtect(app)
 
 astro_database = DatabaseManager(db_path=db_path)
+
 
 with astro_database._get_connection() as conn: 
     conn.execute("PRAGMA journal_mode=WAL;")

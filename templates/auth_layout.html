@@ -7,6 +7,7 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#020617">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <title>AstroDat Observer Pro - Authentication</title>
     
@@ -18,6 +19,14 @@
     <script src="https://unpkg.com/htmx.org@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.addEventListener('htmx:configRequest', (event) => {
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) {
+                    event.detail.headers['X-CSRFToken'] = csrfMeta.getAttribute('content');
+                }
+            });
+        });
         tailwind.config = {
             darkMode: 'selector',
             theme: {

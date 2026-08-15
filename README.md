@@ -88,6 +88,12 @@ flowchart TD
    #If you have Docker
     git clone https://github.com/MarseloBogdani/AstroDatWebsite.git
     cd AstroDatWebsite
+
+    # Create environment configuration file from the template
+    cp .env.example .env  # On Windows PowerShell: copy .env.example .env
+
+    # (Optional) Open .env and customize FLASK_SECRET_KEY
+
     docker compose up --build
 
    # To stop the application, press Ctrl + C in the terminal, or run docker compose down.
@@ -104,6 +110,9 @@ flowchart TD
 
    # Install dependencies
     pip install -r requirements.txt
+
+    # Create environment configuration file
+    cp .env.example .env      # On Windows PowerShell: copy .env.example .env
 
    # Run the application via waitress
     waitress-serve --threads=32 --connection-limit=500 app:app  

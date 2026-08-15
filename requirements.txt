@@ -3,3 +3,4 @@ flask
 locust
 waitress
 flask-wtf
+python-dotenv
